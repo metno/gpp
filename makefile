@@ -6,11 +6,11 @@ CFLAGS   = -Wall -Wno-reorder -Wno-sign-compare
 
 # Flags for optimized compilation
 CFLAGS_O = -O3 -fopenmp $(CFLAGS)
-LIBS_O   = -lnetcdf -lgsl -lblas
+LIBS_O   = -lnetcdf -lgsl -lcblas
 
 # Flags for debug compilation
 CFLAGS_D = -fPIC -g -pg -rdynamic -fprofile-arcs -ftest-coverage -coverage -DDEBUG $(CFLAGS)
-LIBS_D   = -lnetcdf -lgsl -lblas -L build/gtest -lgtest -lpthread
+LIBS_D   = -lnetcdf -lgsl -lcblas -L build/gtest -lgtest -lpthread
 
 # Don't change below here
 SRCDIR   = src/
