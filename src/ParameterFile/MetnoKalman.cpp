@@ -29,8 +29,8 @@ ParameterFileMetnoKalman::ParameterFileMetnoKalman(const Options& iOptions, bool
    if(ifs.good() && line[0] != '#') {
       std::stringstream ss(line);
       // Note: The first value read is not the number of locations. The true number is a bit fewer.
-      bool status = ss >> temp >> numTimes;
-      assert(status);
+      ss >> temp >> numTimes;
+      assert(ss.good());
 
       for(int t = 0; t < (numTimes-1)*coeffFreq+1; t++) {
          mTimes.push_back(t);
@@ -41,41 +41,41 @@ ParameterFileMetnoKalman::ParameterFileMetnoKalman(const Options& iOptions, bool
       if(ifs.good() && line[0] != '#') {
          std::stringstream ss(line);
          int stationId;
-         bool status = ss >> stationId;
-         assert(status);
+         ss >> stationId;
+         assert(ss.good());
          translate(stationId);
 
          float lat;
-         status = ss >> lat;
-         assert(status);
+         ss >> lat;
+         assert(ss.good());
          translate(lat);
 
          float lon;
-         status = ss >> lon;
-         assert(status);
+         ss >> lon;
+         assert(ss.good());
          translate(lon);
 
          float elev;
-         status = ss >> elev;
-         assert(status);
+         ss >> elev;
+         assert(ss.good());
          translate(elev);
 
          float modelElev;
-         status = ss >> modelElev;
-         assert(status);
+         ss >> modelElev;
+         assert(ss.good());
          translate(modelElev);
 
          float lastObs;
-         status = ss >> lastObs;
-         assert(status);
+         ss >> lastObs;
+         assert(ss.good());
          translate(lastObs);
 
          // Loop over each value
          std::vector<float> values;
          while(ss.good()) {
             float value;
-            bool status  = ss >> value;
-            assert(status);
+            ss >> value;
+            assert(ss.good());
             translate(value);
             values.push_back(value);
          }
@@ -146,9 +146,9 @@ bool ParameterFileMetnoKalman::isValid(std::string iFilename) {
          while(true) {
             if(!ss.good())
                break;
-            bool status = ss >> value;
+            ss >> value;
             values.push_back(value);
-            if(!status)
+            if(ss.fail())
                return false;
          }
          if(values.size() != numCols) {

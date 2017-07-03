@@ -25,36 +25,36 @@ FileText::FileText(std::string iFilename, const Options& iOptions) :
          // Loop over each value
          std::vector<float> currValues;
          int time;
-         bool status = ss >> time;
-         if(!status) {
+         ss >> time;
+         if(ss.fail()) {
             Util::error("Could not read time from file '" + iFilename + "'");
          }
          timesSet.insert(time);
 
          Location location(Util::MV, Util::MV, Util::MV);
          float lat;
-         status = ss >> lat;
-         if(!status) {
+         ss >> lat;
+         if(ss.fail()) {
             Util::error("Could not read lat from file '" + iFilename + "'");
          }
 
          float lon;
-         status = ss >> lon;
-         if(!status) {
+         ss >> lon;
+         if(ss.fail()) {
             Util::error("Could not read lon from file '" + iFilename + "'");
          }
 
          float elev;
-         status = ss >> elev;
-         if(!status) {
+         ss >> elev;
+         if(ss.fail()) {
             Util::error("Could not read elev from file '" + iFilename + "'");
          }
          location = Location(lat, lon, elev);
 
          while(ss.good()) {
             float value;
-            bool status  = ss >> value;
-            if(!status) {
+            ss >> value;
+            if(ss.fail()) {
                Util::error("Could not read value from file '" + iFilename + "'");
             }
             currValues.push_back(value);
