@@ -1,5 +1,5 @@
 #include "../Util.h"
-#include "../File/Arome.h"
+#include "../File/Netcdf.h"
 #include "../Variable.h"
 #include "../Calibrator/Calibrator.h"
 #include <algorithm>
@@ -171,6 +171,24 @@ namespace {
       EXPECT_EQ("test", strings[0]);
       EXPECT_EQ("1", strings[1]);
    }
+   TEST_F(UtilTest, splitDelim) {
+      std::string s = "test 1,2, test";
+      std::vector<std::string> strings = Util::split(s, ",");
+      ASSERT_EQ(3, strings.size());
+      EXPECT_EQ("test 1", strings[0]);
+      EXPECT_EQ("2", strings[1]);
+      EXPECT_EQ(" test", strings[2]);
+   }
+   TEST_F(UtilTest, splitDelims) {
+      std::string s = "test 1,2q3 test,4q4";
+      std::vector<std::string> strings = Util::split(s, "q,");
+      ASSERT_EQ(5, strings.size());
+      EXPECT_EQ("test 1", strings[0]);
+      EXPECT_EQ("2", strings[1]);
+      EXPECT_EQ("3 test", strings[2]);
+      EXPECT_EQ("4", strings[3]);
+      EXPECT_EQ("4", strings[4]);
+   }
    TEST_F(UtilTest, logit) {
       const float p[] = {0.2,0.9};
       const float exp[] = {-1.386294, 2.197225};
@@ -204,6 +222,12 @@ namespace {
    TEST_F(UtilTest, status) {
       Util::setShowStatus(false);
       Util::status("test");
+      Util::status("test", false);
+      Util::status("test", true);
+   }
+   TEST_F(UtilTest, info) {
+      Util::setShowInfo(false);
+      Util::info("test");
    }
    TEST_F(UtilTest, getDate) {
       EXPECT_FLOAT_EQ(20150528, Util::getDate(1432816155));
@@ -247,25 +271,26 @@ namespace {
       bool status = Util::copy("testing/files/10x10.nc", "testing/files/10x10_copy.nc");
       EXPECT_TRUE(status);
       // Change 10x10_copy.nc
-      CalibratorNeighbourhood neighbourhood(Variable::T, Options(""));
-      FileArome f1("testing/files/10x10.nc");
-      FileArome f2("testing/files/10x10_copy.nc");
-      FieldPtr field1 = f1.getField(Variable::T, 0);
-      FieldPtr field2 = f2.getField(Variable::T, 0);
+      Variable variable("air_temperature_2m");
+      CalibratorNeighbourhood neighbourhood(variable, Options(""));
+      FileNetcdf f1("testing/files/10x10.nc");
+      FileNetcdf f2("testing/files/10x10_copy.nc");
+      FieldPtr field1 = f1.getField(variable, 0);
+      FieldPtr field2 = f2.getField(variable, 0);
       EXPECT_EQ((*field2)(1,1,0), (*field1)(1,1,0));
       neighbourhood.calibrate(f2);
       // Values should be different now
       EXPECT_NE((*field2)(1,1,0), (*field1)(1,1,0));
-      std::vector<Variable::Type> vars(1,Variable::T);
+      std::vector<Variable> vars(1,variable);
       f2.write(vars);
 
       // Use copy. Values should be the same afterwards
       status = Util::copy("testing/files/10x10.nc", "testing/files/10x10_copy.nc");
       EXPECT_TRUE(status);
-      FileArome f3("testing/files/10x10_copy.nc");
-      FieldPtr field3 = f3.getField(Variable::T, 0);
-      EXPECT_EQ(f1.getNumLat(), f2.getNumLat());
-      EXPECT_EQ(f1.getNumLon(), f2.getNumLon());
+      FileNetcdf f3("testing/files/10x10_copy.nc");
+      FieldPtr field3 = f3.getField(variable, 0);
+      EXPECT_EQ(f1.getNumY(), f2.getNumY());
+      EXPECT_EQ(f1.getNumX(), f2.getNumX());
       EXPECT_EQ(f1.getNumEns(), f2.getNumEns());
       EXPECT_EQ((*field3)(1,1,0), (*field1)(1,1,0));
    }
@@ -278,6 +303,21 @@ namespace {
       EXPECT_FALSE(status);
       status = Util::copy("testing/files/10x10.nc", "testing/files/10x10_copy.nc");
       EXPECT_TRUE(status);
+   }
+   TEST_F(UtilTest, remove) {
+      // Check that removing a file works.
+      std::string tempfile = "testing/files/temp123.nc";
+      bool status = Util::copy("testing/files/10x10.nc", tempfile);
+      status = Util::remove(tempfile);
+      EXPECT_TRUE(status);
+      EXPECT_FALSE(Util::exists(tempfile));
+   }
+   TEST_F(UtilTest, removeInvalid) {
+      // Check that removing a file works.
+      std::string tempfile = "testing/files/temp123.nc";
+      bool status = Util::remove(tempfile);
+      EXPECT_FALSE(status);
+      EXPECT_FALSE(Util::exists(tempfile));
    }
    TEST_F(UtilTest, hasChar) {
       EXPECT_TRUE(Util::hasChar("te  2384 &$*#st", 't'));
@@ -304,61 +344,61 @@ namespace {
       Util::formatDescription("test", "ad qwi qwio wqio dwqion qdwion", 10, 11, 2); // Very narrow message
    }
    TEST_F(UtilTest, compute) {
-      FileArome from("testing/files/10x10.nc");
+      FileNetcdf from("testing/files/10x10.nc");
 
       // Odd-sized neighbourhood
       std::vector<float> hood = getHood(3,0,2);
-      EXPECT_FLOAT_EQ(2, Util::calculateStat(hood, Util::StatTypeQuantile, 0.5));
-      EXPECT_FLOAT_EQ(0, Util::calculateStat(hood, Util::StatTypeQuantile, 0));
-      EXPECT_FLOAT_EQ(3, Util::calculateStat(hood, Util::StatTypeQuantile, 1));
+      EXPECT_FLOAT_EQ(2, Util::calculateStat(hood, Util::StatTypeMedian, Util::MV));
+      EXPECT_FLOAT_EQ(0, Util::calculateStat(hood, Util::StatTypeMin, Util::MV));
+      EXPECT_FLOAT_EQ(3, Util::calculateStat(hood, Util::StatTypeMax, Util::MV));
       EXPECT_FLOAT_EQ(1.6666666, Util::calculateStat(hood, Util::StatTypeMean));
       EXPECT_FLOAT_EQ(1.247219, Util::calculateStat(hood, Util::StatTypeStd));
 
       // Even-sized neighbourhood
       hood = getHood(4,2,0,3);
-      EXPECT_FLOAT_EQ(2.5, Util::calculateStat(hood, Util::StatTypeQuantile, 0.5));
-      EXPECT_FLOAT_EQ(0, Util::calculateStat(hood, Util::StatTypeQuantile, 0));
-      EXPECT_FLOAT_EQ(4, Util::calculateStat(hood, Util::StatTypeQuantile, 1));
+      EXPECT_FLOAT_EQ(2.5, Util::calculateStat(hood, Util::StatTypeMedian, Util::MV));
+      EXPECT_FLOAT_EQ(0, Util::calculateStat(hood, Util::StatTypeMin, Util::MV));
+      EXPECT_FLOAT_EQ(4, Util::calculateStat(hood, Util::StatTypeMax, Util::MV));
       EXPECT_FLOAT_EQ(2.25, Util::calculateStat(hood, Util::StatTypeMean));
       EXPECT_FLOAT_EQ(1.47902, Util::calculateStat(hood, Util::StatTypeStd));
 
       // Missing value
       hood = getHood(0,Util::MV,-4,2);
-      EXPECT_FLOAT_EQ(0, Util::calculateStat(hood, Util::StatTypeQuantile, 0.5));
-      EXPECT_FLOAT_EQ(-4, Util::calculateStat(hood, Util::StatTypeQuantile, 0));
-      EXPECT_FLOAT_EQ(2, Util::calculateStat(hood, Util::StatTypeQuantile, 1));
+      EXPECT_FLOAT_EQ(0, Util::calculateStat(hood, Util::StatTypeMedian, Util::MV));
+      EXPECT_FLOAT_EQ(-4, Util::calculateStat(hood, Util::StatTypeMin, Util::MV));
+      EXPECT_FLOAT_EQ(2, Util::calculateStat(hood, Util::StatTypeMax, Util::MV));
       EXPECT_FLOAT_EQ(-0.6666666, Util::calculateStat(hood, Util::StatTypeMean));
       EXPECT_FLOAT_EQ(2.494438, Util::calculateStat(hood, Util::StatTypeStd));
 
       // All same values
       hood = getHood(1,1,1,1);
-      EXPECT_FLOAT_EQ(1, Util::calculateStat(hood, Util::StatTypeQuantile, 0.5));
-      EXPECT_FLOAT_EQ(1, Util::calculateStat(hood, Util::StatTypeQuantile, 0));
-      EXPECT_FLOAT_EQ(1, Util::calculateStat(hood, Util::StatTypeQuantile, 1));
+      EXPECT_FLOAT_EQ(1, Util::calculateStat(hood, Util::StatTypeMedian, Util::MV));
+      EXPECT_FLOAT_EQ(1, Util::calculateStat(hood, Util::StatTypeMin, Util::MV));
+      EXPECT_FLOAT_EQ(1, Util::calculateStat(hood, Util::StatTypeMax, Util::MV));
       EXPECT_FLOAT_EQ(1, Util::calculateStat(hood, Util::StatTypeMean));
       EXPECT_FLOAT_EQ(0, Util::calculateStat(hood, Util::StatTypeStd));
 
       // Small variance, large mean
       hood = getHood(28123.49,28123.48,28123.49);
-      EXPECT_FLOAT_EQ(28123.49, Util::calculateStat(hood, Util::StatTypeQuantile, 0.5));
-      EXPECT_FLOAT_EQ(28123.48, Util::calculateStat(hood, Util::StatTypeQuantile, 0));
-      EXPECT_FLOAT_EQ(28123.49, Util::calculateStat(hood, Util::StatTypeQuantile, 1));
+      EXPECT_FLOAT_EQ(28123.49, Util::calculateStat(hood, Util::StatTypeMedian, Util::MV));
+      EXPECT_FLOAT_EQ(28123.48, Util::calculateStat(hood, Util::StatTypeMin, Util::MV));
+      EXPECT_FLOAT_EQ(28123.49, Util::calculateStat(hood, Util::StatTypeMax, Util::MV));
       EXPECT_FLOAT_EQ(28123.48666667, Util::calculateStat(hood, Util::StatTypeMean));
       EXPECT_FLOAT_EQ(0.0046035596, Util::calculateStat(hood, Util::StatTypeStd));
 
       // All missing
       hood = getHood(Util::MV,Util::MV,Util::MV);
-      EXPECT_FLOAT_EQ(Util::MV, Util::calculateStat(hood, Util::StatTypeQuantile, 0.5));
-      EXPECT_FLOAT_EQ(Util::MV, Util::calculateStat(hood, Util::StatTypeQuantile, 0));
-      EXPECT_FLOAT_EQ(Util::MV, Util::calculateStat(hood, Util::StatTypeQuantile, 1));
+      EXPECT_FLOAT_EQ(Util::MV, Util::calculateStat(hood, Util::StatTypeMedian, Util::MV));
+      EXPECT_FLOAT_EQ(Util::MV, Util::calculateStat(hood, Util::StatTypeMin, Util::MV));
+      EXPECT_FLOAT_EQ(Util::MV, Util::calculateStat(hood, Util::StatTypeMax, Util::MV));
       EXPECT_FLOAT_EQ(Util::MV, Util::calculateStat(hood, Util::StatTypeMean));
       EXPECT_FLOAT_EQ(Util::MV, Util::calculateStat(hood, Util::StatTypeStd));
 
       // Empty
       hood = std::vector<float>();
-      EXPECT_FLOAT_EQ(Util::MV, Util::calculateStat(hood, Util::StatTypeQuantile, 0.5));
-      EXPECT_FLOAT_EQ(Util::MV, Util::calculateStat(hood, Util::StatTypeQuantile, 0));
-      EXPECT_FLOAT_EQ(Util::MV, Util::calculateStat(hood, Util::StatTypeQuantile, 1));
+      EXPECT_FLOAT_EQ(Util::MV, Util::calculateStat(hood, Util::StatTypeMedian, Util::MV));
+      EXPECT_FLOAT_EQ(Util::MV, Util::calculateStat(hood, Util::StatTypeMin, Util::MV));
+      EXPECT_FLOAT_EQ(Util::MV, Util::calculateStat(hood, Util::StatTypeMax, Util::MV));
       EXPECT_FLOAT_EQ(Util::MV, Util::calculateStat(hood, Util::StatTypeMean));
       EXPECT_FLOAT_EQ(Util::MV, Util::calculateStat(hood, Util::StatTypeStd));
    }

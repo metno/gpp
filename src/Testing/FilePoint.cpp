@@ -5,37 +5,44 @@
 
 namespace {
    class FilePointTest : public ::testing::Test {
+      protected:
+         virtual void SetUp() {
+             mVariable = Variable("air_temperature_2m");
+         }
+         virtual void TearDown() {
+         }
+         Variable mVariable;
    };
 
    TEST_F(FilePointTest, asInput) {
       FilePoint file("testing/files/validPoint1.txt", Options("lat=1 lon=2 elev=3"));
-      FieldPtr field0 = file.getField(Variable::T, 0);
+      FieldPtr field0 = file.getField(mVariable, 0);
       EXPECT_FLOAT_EQ(290, (*field0)(0,0,0));
-      FieldPtr field1 = file.getField(Variable::T, 1);
+      FieldPtr field1 = file.getField(mVariable, 1);
       EXPECT_FLOAT_EQ(288, (*field1)(0,0,0));
    }
    TEST_F(FilePointTest, asOutput) {
       {
-         FileArome from("testing/files/10x10.nc");
+         FileNetcdf from("testing/files/10x10.nc");
          FilePoint to("testing/files/filePoint.txt", Options("lat=1 lon=2 elev=3 time=2 ens=1"));
-         DownscalerNearestNeighbour d = DownscalerNearestNeighbour(Variable::T, Options());
+         DownscalerNearestNeighbour d = DownscalerNearestNeighbour(mVariable, mVariable, Options());
          bool status = d.downscale(from, to);
          EXPECT_TRUE(status);
-         std::vector<Variable::Type> variables(1, Variable::T);
+         std::vector<Variable> variables(1, mVariable);
          to.write(variables);
       }
       // Check that the right values are written
       FilePoint from("testing/files/filePoint.txt", Options("lat=1 lon=2 elev=3 time=2"));
-      FieldPtr field = from.getField(Variable::T, 0);
+      FieldPtr field = from.getField(mVariable, 0);
       EXPECT_FLOAT_EQ(303, (*field)(0,0,0));
    }
    TEST_F(FilePointTest, asEnsemble) {
       FilePoint file("testing/files/validPoint2.txt", Options("lat=1 lon=2 elev=3"));
-      FieldPtr field0 = file.getField(Variable::T, 0);
+      FieldPtr field0 = file.getField(mVariable, 0);
       ASSERT_EQ(2, field0->getNumEns());
       EXPECT_FLOAT_EQ(290, (*field0)(0,0,0));
       EXPECT_FLOAT_EQ(291, (*field0)(0,0,1));
-      FieldPtr field1 = file.getField(Variable::T, 1);
+      FieldPtr field1 = file.getField(mVariable, 1);
       ASSERT_EQ(2, field1->getNumEns());
       EXPECT_FLOAT_EQ(288, (*field1)(0,0,0));
       EXPECT_FLOAT_EQ(300, (*field1)(0,0,1));

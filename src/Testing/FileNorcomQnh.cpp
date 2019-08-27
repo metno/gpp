@@ -5,6 +5,13 @@
 
 namespace {
    class FileNorcomQnhTest : public ::testing::Test {
+      protected:
+         virtual void SetUp() {
+             mVariable = Variable("surface_air_pressure");
+         }
+         virtual void TearDown() {
+         }
+         Variable mVariable;
    };
 
    TEST_F(FileNorcomQnhTest, options) {
@@ -26,25 +33,22 @@ namespace {
       EXPECT_FLOAT_EQ(120, elevs[0][1]);
    }
    TEST_F(FileNorcomQnhTest, asOutput) {
-      FileArome from("testing/files/10x10.nc");
+      FileNetcdf from("testing/files/10x10.nc");
       FileNorcomQnh to("testing/files/test.txt", Options("lats=1,2 lons=2,3 elevs=100,120 names=point1,point2 numTimes=2 startTime=0 endTime=1"));
-      DownscalerNearestNeighbour d = DownscalerNearestNeighbour(Variable::P, Options());
+      DownscalerNearestNeighbour d = DownscalerNearestNeighbour(mVariable, mVariable, Options());
       bool status = d.downscale(from, to);
       EXPECT_TRUE(status);
-      std::vector<Variable::Type> variables(1, Variable::P);
+      std::vector<Variable> variables(1, mVariable);
       to.write(variables);
 
-      // FieldPtr field = to.getField(Variable::P, 0);
+      // FieldPtr field = to.getField(mVariable, 0);
       // EXPECT_FLOAT_EQ(1, (*field)(0,0,0));
    }
    TEST_F(FileNorcomQnhTest, description) {
       FileNorcomQnh::description();
    }
    TEST_F(FileNorcomQnhTest, valid) {
-      // Longitudes outside 360, -360 should be allowed
       FileNorcomQnh("testing/files/test.txt", Options("lats=1 lons=300 elevs=3 numTimes=2 startTime=0 endTime=1 names=test"));
-      FileNorcomQnh("testing/files/test.txt", Options("lats=1 lons=370 elevs=3 numTimes=2 startTime=0 endTime=1 names=test"));
-      FileNorcomQnh("testing/files/test.txt", Options("lats=1 lons=-370 elevs=3 numTimes=2 startTime=0 endTime=1 names=test"));
    }
    TEST_F(FileNorcomQnhTest, invalid) {
       ::testing::FLAGS_gtest_death_test_style = "threadsafe";
@@ -67,6 +71,10 @@ namespace {
       // Invalid latitude
       EXPECT_DEATH(FileNorcomQnh("testing/files/test.txt", Options("lats=101 lons=2 elevs=3 numTimes=2 startTime=0 endTime=1")), ".*");
       EXPECT_DEATH(FileNorcomQnh("testing/files/test.txt", Options("lats=-91 lons=180 elevs=3 numTimes=2 startTime=0 endTime=1")), ".*");
+
+      // Longitudes outside 360, -360 should not be allowed
+      EXPECT_DEATH(FileNorcomQnh("testing/files/test.txt", Options("lats=1 lons=370 elevs=3 numTimes=2 startTime=0 endTime=1 names=test")), ".*");
+      EXPECT_DEATH(FileNorcomQnh("testing/files/test.txt", Options("lats=1 lons=-370 elevs=3 numTimes=2 startTime=0 endTime=1 names=test")), ".*");
 
       // Start/end time not in ascending order
       EXPECT_DEATH(FileNorcomQnh("testing/files/test.txt", Options("lats=1 lons=2 elevs=3 names=q numTimes=2 startTime=1 endTime=0")), ".*");

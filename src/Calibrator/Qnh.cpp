@@ -2,13 +2,14 @@
 #include "../Util.h"
 #include "../File/File.h"
 #include <math.h>
-CalibratorQnh::CalibratorQnh(const Options& iOptions) :
-      Calibrator(iOptions) {
-
+CalibratorQnh::CalibratorQnh(const Variable& iVariable, const Options& iOptions) :
+      Calibrator(iVariable, iOptions) {
+   iOptions.getRequiredValue("pressureVariable", mPressureVariable);
+   iOptions.check();
 }
 bool CalibratorQnh::calibrateCore(File& iFile, const ParameterFile* iParameterFile) const {
-   int nLat = iFile.getNumLat();
-   int nLon = iFile.getNumLon();
+   int nLat = iFile.getNumY();
+   int nLon = iFile.getNumX();
    int nEns = iFile.getNumEns();
    int nTime = iFile.getNumTime();
 
@@ -18,8 +19,8 @@ bool CalibratorQnh::calibrateCore(File& iFile, const ParameterFile* iParameterFi
 
    // Loop over offsets
    for(int t = 0; t < nTime; t++) {
-      const Field& input = *iFile.getField(Variable::P, t);
-      Field& output      = *iFile.getField(Variable::QNH, t);
+      const Field& input = *iFile.getField(mPressureVariable, t);
+      Field& output      = *iFile.getField(mVariable, t);
 
       #pragma omp parallel for
       for(int i = 0; i < nLat; i++) {
@@ -36,9 +37,12 @@ bool CalibratorQnh::calibrateCore(File& iFile, const ParameterFile* iParameterFi
    }
    return true;
 }
-std::string CalibratorQnh::description() {
+std::string CalibratorQnh::description(bool full) {
    std::stringstream ss;
-   ss << Util::formatDescription("-c qnh", "Adjusts the surface pressure down to sea-level based on a standard atmosphere (ICAO) producing the QNH variable.") << std::endl;
+   if(full)
+      ss << Util::formatDescription("-c qnh", "Adjusts the surface pressure down to sea-level based on a standard atmosphere (ICAO) producing the QNH variable.") << std::endl;
+   else
+      ss << Util::formatDescription("-c qnh", "Compute QNH") << std::endl;
    return ss.str();
 }
 float CalibratorQnh::calcQnh(float iElev, float iPressure) {

@@ -12,14 +12,13 @@ class Parameters;
 //! Designed for windspeed
 class CalibratorBct : public Calibrator {
    public:
-      CalibratorBct(Variable::Type iMainPredictor, const Options& iOptions);
+      CalibratorBct(const Variable& iMainPredictor, const Options& iOptions);
       static float getInvCdf(float iQuantile, float iEnsMean, float iEnsStd, const Parameters& iParameters);
 
-      static std::string description();
+      static std::string description(bool full=true);
       std::string name() const {return "bct";};
    private:
       bool calibrateCore(File& iFile, const ParameterFile* iParameterFile) const;
-      Variable::Type mMainPredictor;
       float mMaxEnsMean;
 };
 #endif

@@ -7,7 +7,6 @@
 
 class ParameterFile;
 class Parameters;
-class TrainingData;
 
 //! Ensemble calibration using zero-adjusted gamma distribution. Its predictors are:
 //! - ensemble mean
@@ -15,21 +14,17 @@ class TrainingData;
 //! Designed for precip
 class CalibratorGaussian : public Calibrator {
    public:
-      CalibratorGaussian(Variable::Type iMainPredictor, const Options& iOptions);
+      CalibratorGaussian(const Variable& iVariable, const Options& iOptions);
       static float getInvCdf(float iQuantile, float iEnsMean, float iEnsSpread, const Parameters& iParameters);
       static float getCdf(float iThreshold, float iEnsMean, float iEnsSpread, const Parameters& iParameters);
       static float getPdf(float iThreshold, float iEnsMean, float iEnsSpread, const Parameters& iParameters);
 
-      int   getNeighbourhoodSize() {return mNeighbourhoodSize;};
-
-      static std::string description();
+      static std::string description(bool full=true);
       std::string name() const {return "gaussian";};
-      //! Create parameters based on training data
-      Parameters train(const TrainingData& iData, int iOffset) const;
+      Parameters train(const std::vector<ObsEns>& iData) const;
    private:
       static double my_f(const gsl_vector *v, void *params);
       bool calibrateCore(File& iFile, const ParameterFile* iParameterFile) const;
-      Variable::Type mMainPredictor;
       int  mNeighbourhoodSize;
       float mLogLikelihoodTolerance;
       static const int mNumParameters = 2;

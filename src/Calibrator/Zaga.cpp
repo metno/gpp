@@ -6,26 +6,29 @@
 #include "../File/File.h"
 #include "../ParameterFile/ParameterFile.h"
 #include "../Parameters.h"
-#include "../TrainingData.h"
-CalibratorZaga::CalibratorZaga(Variable::Type iMainPredictor, const Options& iOptions):
-      Calibrator(iOptions),
-      mMainPredictor(iMainPredictor),
+CalibratorZaga::CalibratorZaga(const Variable& iVariable, const Options& iOptions):
+      Calibrator(iVariable, iOptions),
       mFracThreshold(0.5),
-      mOutputPop(false),
       mNeighbourhoodSize(0),
       mPopThreshold(0.5),
       mPrecipLowQuantile(Util::MV),
       mPrecipMiddleQuantile(Util::MV),
       mPrecipHighQuantile(Util::MV),
+      mLowVariable(""),
+      mMiddleVariable(""),
+      mHighVariable(""),
       mMaxEnsMean(100),
       mLogLikelihoodTolerance(1e-4),
       m6h(false) {
 
    iOptions.getValue("fracThreshold", mFracThreshold);
-   iOptions.getValue("outputPop", mOutputPop);
    iOptions.getValue("precipLowQuantile", mPrecipLowQuantile);
    iOptions.getValue("precipMiddleQuantile", mPrecipMiddleQuantile);
    iOptions.getValue("precipHighQuantile", mPrecipHighQuantile);
+   iOptions.getValue("lowVariable", mLowVariable);
+   iOptions.getValue("middleVariable", mMiddleVariable);
+   iOptions.getValue("highVariable", mHighVariable);
+   iOptions.getValue("popVariable", mPopVariable);
    iOptions.getValue("neighbourhoodSize", mNeighbourhoodSize);
    iOptions.getValue("popThreshold", mPopThreshold);
    iOptions.getValue("maxEnsMean", mMaxEnsMean);
@@ -38,33 +41,28 @@ CalibratorZaga::CalibratorZaga(Variable::Type iMainPredictor, const Options& iOp
       ss << "CalibratorZaga neighbourhoodSize (" << mNeighbourhoodSize << ") must be >= 0";
       Util::error(ss.str());
    }
+   iOptions.check();
 }
 
 bool CalibratorZaga::calibrateCore(File& iFile, const ParameterFile* iParameterFile) const {
-   if(iParameterFile == NULL) {
-      Util::error("Calibrator 'zaga' requires a parameter file");
-   }
-
-   int nLat = iFile.getNumLat();
-   int nLon = iFile.getNumLon();
+   int nLat = iFile.getNumY();
+   int nLon = iFile.getNumX();
    int nEns = iFile.getNumEns();
    int nTime = iFile.getNumTime();
    vec2 lats = iFile.getLats();
    vec2 lons = iFile.getLons();
    vec2 elevs = iFile.getElevs();
 
-   Variable::Type popVariable = Variable::Pop;
    int startTime = 0;
    int timeWindow = 1;
    if(m6h) {
-      popVariable = Variable::Pop6h;
       startTime = 5;
       timeWindow = 6;
    }
 
    std::vector<FieldPtr> precips;
    for(int t = 0; t < nTime; t++) {
-      precips.push_back(iFile.getField(Variable::Precip, t));
+      precips.push_back(iFile.getField(mVariable, t));
    }
 
    // Loop over offsets
@@ -72,36 +70,39 @@ bool CalibratorZaga::calibrateCore(File& iFile, const ParameterFile* iParameterF
       int numInvalidRaw = 0;
       int numInvalidCal = 0;
 
-      Parameters parameters;
+      Parameters parametersGlobal;
       if(!iParameterFile->isLocationDependent())
-         parameters = iParameterFile->getParameters(t);
+         parametersGlobal = iParameterFile->getParameters(t);
 
       // Load the POP output field, if needed
       FieldPtr pop;
-      if(mOutputPop) {
-         pop = iFile.getField(popVariable, t);
+      if(mPopVariable != "") {
+         pop = iFile.getField(mPopVariable, t);
       }
       FieldPtr precipLow;
       if(Util::isValid(mPrecipLowQuantile)) {
-         precipLow = iFile.getField(Variable::PrecipLow, t);
+         precipLow = iFile.getField(mLowVariable, t);
       }
       FieldPtr precipMiddle;
       if(Util::isValid(mPrecipMiddleQuantile)) {
-         precipMiddle = iFile.getField(Variable::PrecipMiddle, t);
+         precipMiddle = iFile.getField(mMiddleVariable, t);
       }
       FieldPtr precipHigh;
       if(Util::isValid(mPrecipHighQuantile)) {
-         precipHigh = iFile.getField(Variable::PrecipHigh, t);
+         precipHigh = iFile.getField(mHighVariable, t);
       }
 
       #pragma omp parallel for reduction(+:numInvalidRaw, numInvalidCal)
       for(int i = 0; i < nLat; i++) {
          for(int j = 0; j < nLon; j++) {
+            Parameters parameters;
             if(iParameterFile->isLocationDependent())
                parameters = iParameterFile->getParameters(t, Location(lats[i][j], lons[i][j], elevs[i][j]));
+            else
+               parameters = parametersGlobal;
 
             // for Pop6h, the first few hours are undefined, since we cannot do a 6h accumulation
-            if(mOutputPop && t < startTime) {
+            if(mPopVariable != "" && t < startTime) {
                for(int e = 0; e < nEns; e++) {
                   (*pop)(i,j,e) = Util::MV;
                }
@@ -162,7 +163,7 @@ bool CalibratorZaga::calibrateCore(File& iFile, const ParameterFile* iParameterF
                   }
 
                   // Compute POP
-                  if(mOutputPop) {
+                  if(mPopVariable != "") {
                      for(int e = 0; e < nEns; e++) {
                         float cdf = getCdf(mPopThreshold, ensMean, ensFrac, parameters);
                         // std::cout << ensMean << " " << ensFrac << " " << cdf << std::endl;
@@ -397,20 +398,19 @@ float CalibratorZaga::getP0(float iEnsMean, float iEnsFrac, const Parameters& iP
    return P0;
 }
 
-Parameters CalibratorZaga::train(const TrainingData& iData, int iOffset) const {
-   std::vector<ObsEns> data = iData.getData(iOffset);
-   if(data.size() == 0) {
+Parameters CalibratorZaga::train(const std::vector<ObsEns>& iData) const {
+   if(iData.size() == 0) {
       std::cout << "No data to train on...";
       return Parameters();
    }
    std::vector<float> obs, mean, frac;
-   obs.resize(data.size(), Util::MV);
-   mean.resize(data.size(), Util::MV);
-   frac.resize(data.size(), Util::MV);
+   obs.resize(iData.size(), Util::MV);
+   mean.resize(iData.size(), Util::MV);
+   frac.resize(iData.size(), Util::MV);
    // Compute predictors in model
-   for(int i = 0; i < data.size(); i++) {
-      obs[i] = data[i].first;
-      std::vector<float> ens = data[i].second;
+   for(int i = 0; i < iData.size(); i++) {
+      obs[i] = iData[i].first;
+      std::vector<float> ens = iData[i].second;
       mean[i] = Util::calculateStat(ens, Util::StatTypeMean);
       int total = 0;
       int valid = 0;
@@ -656,21 +656,28 @@ float CalibratorZaga::logLikelihood(float obs, float iEnsMean, float iEnsFrac, c
    return log(pdf);
 }
 
-std::string CalibratorZaga::description() {
+std::string CalibratorZaga::description(bool full) {
    std::stringstream ss;
-   ss << Util::formatDescription("-c zaga", "Calibrates an ensemble using a zero-adjusted gamma distribution, suitable for parameters like precipitation. The distribution has three parameters:") << std::endl;
-   ss << Util::formatDescription("", "* mean  = exp(a + b * ensmean^(1/3)") << std::endl;
-   ss << Util::formatDescription("", "* sigma = exp(c + d * ensmean") << std::endl;
-   ss << Util::formatDescription("", "* logit(p0) = e + f * ensmean + g * ensfrac + h * ensmean^(1/3)") << std::endl;
-   ss << Util::formatDescription("", "where ensmean is the ensemble mean, and ensfrac is the fraction of members above a certain threshold (use fracThreshold option). The parameter set must contain 8 columns with the values [a b c d e f g h].") << std::endl;
-   ss << Util::formatDescription("   fracThreshold=0.5", "Threshold defining precip/no-precip boundary when computing fraction of members with precip.") << std::endl;
-   ss << Util::formatDescription("   neighbourhoodSize=0", "Increase the ensemble by taking all gridpoints within a neighbourhood. A value of 0 means no neighbourhood is used.") << std::endl;
-   ss << Util::formatDescription("   outputPop=0", "Should probability of precip be written to the POP field?") << std::endl;
-   ss << Util::formatDescription("   precipLowQuantile=undef", "If set, write values to the PrecipLow variable using this quantile (number between 0 and 1)") << std::endl;
-   ss << Util::formatDescription("   precipMiddleQuantile=undef", "If set, write values to the PrecipMiddle variable using this quantile (number between 0 and 1)") << std::endl;
-   ss << Util::formatDescription("   precipHighQuantile=undef", "If set, write values to the PrecipHigh variable using this quantile (number between 0 and 1)") << std::endl;
-   ss << Util::formatDescription("   popThreshold=0.5", "If POP is written, what threshold should be used?") << std::endl;
-   ss << Util::formatDescription("   maxEnsMean=100", "Upper limit of what the ensemble mean is allowed to be when passed into the distribution. This effectively prevents the distribution to yield very high values.") << std::endl;
-   ss << Util::formatDescription("   6h=0", "If POP is produced, should it be based on the precip in the last 6 hours? If so, the Pop6h variable is written.") << std::endl;
+   if(full) {
+      ss << Util::formatDescription("-c zaga", "Calibrates an ensemble using a zero-adjusted gamma distribution, suitable for parameters like precipitation. The distribution has three parameters:") << std::endl;
+      ss << Util::formatDescription("", "* mean  = exp(a + b * ensmean^(1/3)") << std::endl;
+      ss << Util::formatDescription("", "* sigma = exp(c + d * ensmean") << std::endl;
+      ss << Util::formatDescription("", "* logit(p0) = e + f * ensmean + g * ensfrac + h * ensmean^(1/3)") << std::endl;
+      ss << Util::formatDescription("", "where ensmean is the ensemble mean, and ensfrac is the fraction of members above a certain threshold (use fracThreshold option). The parameter set must contain 8 columns with the values [a b c d e f g h].") << std::endl;
+      ss << Util::formatDescription("   fracThreshold=0.5", "Threshold defining precip/no-precip boundary when computing fraction of members with precip.") << std::endl;
+      ss << Util::formatDescription("   neighbourhoodSize=0", "Increase the ensemble by taking all gridpoints within a neighbourhood. A value of 0 means no neighbourhood is used.") << std::endl;
+      ss << Util::formatDescription("   precipLowQuantile=undef", "If set, write values to the PrecipLow variable using this quantile (number between 0 and 1)") << std::endl;
+      ss << Util::formatDescription("   precipMiddleQuantile=undef", "If set, write values to the PrecipMiddle variable using this quantile (number between 0 and 1)") << std::endl;
+      ss << Util::formatDescription("   precipHighQuantile=undef", "If set, write values to the PrecipHigh variable using this quantile (number between 0 and 1)") << std::endl;
+      ss << Util::formatDescription("   lowVariable=undef", "If set, write precip low values to this variable") << std::endl;
+      ss << Util::formatDescription("   middleVariable=undef", "If set, write precip middle values to this variable name.") << std::endl;
+      ss << Util::formatDescription("   highVariable=undef", "If set, write precip high values to this variablei name.") << std::endl;
+      ss << Util::formatDescription("   popVariable=undef", "iF set, write POP values to this variable name.") << std::endl;
+      ss << Util::formatDescription("   popThreshold=0.5", "If POP is written, what threshold should be used?") << std::endl;
+      ss << Util::formatDescription("   maxEnsMean=100", "Upper limit of what the ensemble mean is allowed to be when passed into the distribution. This effectively prevents the distribution to yield very high values.") << std::endl;
+      ss << Util::formatDescription("   6h=0", "If POP is produced, should it be based on the precip in the last 6 hours? If so, the Pop6h variable is written.") << std::endl;
+   }
+   else
+      ss << Util::formatDescription("-c zaga", "Calibrates an ensemble using a zero-adjusted gamma distribution") << std::endl;
    return ss.str();
 }

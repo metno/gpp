@@ -207,6 +207,86 @@ namespace {
       ASSERT_EQ(1, values.size());
       EXPECT_EQ("4", values[0]);
    }
+   TEST_F(OptionsTest, requiredValue) {
+      ::testing::FLAGS_gtest_death_test_style = "threadsafe";
+      Util::setShowError(false);
+      Options options = Options("test=3,1,2 new=4");
+      std::vector<int> values;
+      int value = Util::MV;
+      options.getRequiredValues("test", values);
+      ASSERT_EQ(3, values.size());
+      EXPECT_EQ(3, values[0]);
+      EXPECT_EQ(1, values[1]);
+      EXPECT_EQ(2, values[2]);
+      options.getValue("new", value);
+      EXPECT_EQ(4, value);
+
+      EXPECT_DEATH(options.getRequiredValues("missing", values), ".*");
+      EXPECT_DEATH(options.getRequiredValue("missing", value), ".*");
+   }
+   TEST_F(OptionsTest, check) {
+      std::vector<int> values;
+      int value = Util::MV;
+      Options options = Options("test=3,1,2 new=4 att1=1,2,3");
+      options.getValues("test", values);
+      options.getValue("new", value);
+      EXPECT_EQ(4, value);
+      EXPECT_FALSE(options.check());
+      options.getValue("new", value);
+      EXPECT_FALSE(options.check());
+      options.getValues("att1", values);
+      EXPECT_TRUE(options.check());
+   }
+   TEST_F(OptionsTest, checkRequired) {
+      std::vector<int> values;
+      int value = Util::MV;
+      Options options = Options("test=3,1,2 new=4 att1=1,2,3");
+      options.getRequiredValues("test", values);
+      options.getRequiredValue("new", value);
+      EXPECT_EQ(4, value);
+      EXPECT_FALSE(options.check());
+      options.getRequiredValue("new", value);
+      EXPECT_FALSE(options.check());
+      options.getRequiredValues("att1", values);
+      EXPECT_TRUE(options.check());
+   }
+   TEST_F(OptionsTest, equality) {
+      Options options1("test=1 other=2");
+      Options options2("other=2 test=1");
+      EXPECT_TRUE(options1 == options2);
+      EXPECT_TRUE(options2 == options1);
+      EXPECT_FALSE(options1 != options2);
+      EXPECT_FALSE(options2 != options1);
+
+      Options options3("");
+      Options options4("");
+      EXPECT_TRUE(options3 == options4);
+      EXPECT_TRUE(options4 == options3);
+      EXPECT_FALSE(options3 != options4);
+      EXPECT_FALSE(options4 != options3);
+   }
+   TEST_F(OptionsTest, inequality) {
+      Options options1("test=1 other=2");
+      Options options2("other=2");
+      EXPECT_FALSE(options1 == options2);
+      EXPECT_FALSE(options2 == options1);
+      EXPECT_TRUE(options1 != options2);
+      EXPECT_TRUE(options2 != options1);
+
+      Options options3("test=1 other=2");
+      Options options4("test=1");
+      EXPECT_FALSE(options3 == options4);
+      EXPECT_FALSE(options4 == options3);
+      EXPECT_TRUE(options3 != options4);
+      EXPECT_TRUE(options4 != options3);
+
+      Options options5("test=1 other=2");
+      Options options6("test=1 new=2");
+      EXPECT_FALSE(options5 == options6);
+      EXPECT_FALSE(options6 == options5);
+      EXPECT_TRUE(options5 != options6);
+      EXPECT_TRUE(options6 != options5);
+   }
 }
 int main(int argc, char **argv) {
      ::testing::InitGoogleTest(&argc, argv);

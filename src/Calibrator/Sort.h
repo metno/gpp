@@ -7,11 +7,11 @@ class Parameters;
 //! Applies polynomial regression to forecasts
 class CalibratorSort : public Calibrator {
    public:
-      CalibratorSort(Variable::Type iVariable, const Options& iOptions);
-      static std::string description();
+      CalibratorSort(const Variable& iVariable, const Options& iOptions);
+      static std::string description(bool full=true);
       std::string name() const {return "sort";};
+      bool requiresParameterFile() const { return false;};
    private:
       bool calibrateCore(File& iFile, const ParameterFile* iParameterFile) const;
-      Variable::Type mVariable;
 };
 #endif

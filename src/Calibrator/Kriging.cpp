@@ -5,12 +5,11 @@
 #include "../Downscaler/Downscaler.h"
 #include <math.h>
 
-CalibratorKriging::CalibratorKriging(Variable::Type iVariable, const Options& iOptions):
-      Calibrator(iOptions),
-      mVariable(iVariable),
+CalibratorKriging::CalibratorKriging(const Variable& iVariable, const Options& iOptions):
+      Calibrator(iVariable, iOptions),
       mEfoldDist(30000),
       mMaxElevDiff(Util::MV),
-      mAuxVariable(Variable::None),
+      mAuxVariable(""),
       mLowerThreshold(Util::MV),
       mUpperThreshold(Util::MV),
       mCrossValidate(false),
@@ -68,8 +67,7 @@ CalibratorKriging::CalibratorKriging(Variable::Type iVariable, const Options& iO
    }
 
    std::string auxVariable;
-   if(iOptions.getValue("auxVariable", auxVariable)) {
-      mAuxVariable = Variable::getType(auxVariable);
+   if(iOptions.getValue("auxVariable", mAuxVariable)) {
       std::vector<float> range;
       if(iOptions.getValues("range", range)) {
          if(range.size() != 2) {
@@ -88,15 +86,12 @@ CalibratorKriging::CalibratorKriging(Variable::Type iVariable, const Options& iO
       }
    }
    iOptions.getValue("crossValidate", mCrossValidate);
+   iOptions.check();
 }
 
 bool CalibratorKriging::calibrateCore(File& iFile, const ParameterFile* iParameterFile) const {
-   if(iParameterFile == NULL) {
-      Util::error("Calibrator 'kriging' requires a parameter file");
-   }
-
-   int nLat = iFile.getNumLat();
-   int nLon = iFile.getNumLon();
+   int nLat = iFile.getNumY();
+   int nLon = iFile.getNumX();
    int nEns = iFile.getNumEns();
    int nTime = iFile.getNumTime();
    vec2 lats = iFile.getLats();
@@ -119,7 +114,7 @@ bool CalibratorKriging::calibrateCore(File& iFile, const ParameterFile* iParamet
 
    // Precompute weights from auxillary variable
    std::vector<std::vector<std::vector<std::vector<float> > > > auxWeights;
-   if(mAuxVariable != Variable::None) {
+   if(mAuxVariable != "") {
       // Initialize
       auxWeights.resize(nLat);
       for(int i = 0; i < nLat; i++) {
@@ -269,7 +264,7 @@ bool CalibratorKriging::calibrateCore(File& iFile, const ParameterFile* iParamet
       std::vector<float> bias(N,0);
       for(int k = 0; k < obsLocations.size(); k++) {
          Location loc = obsLocations[k];
-         Parameters parameters = iParameterFile->getParameters(t, loc);
+         Parameters parameters = iParameterFile->getParameters(t, loc, false);
          if(parameters.size() > 0) {
             float currBias = parameters[0];
             if(Util::isValid(currBias)) {
@@ -356,7 +351,7 @@ bool CalibratorKriging::calibrateCore(File& iFile, const ParameterFile* iParamet
                   float rawValue = (*field)(i,j,e);
 
                   // Adjust bias based on auxillary weight
-                  if(mAuxVariable != Variable::None) {
+                  if(mAuxVariable != "") {
                      float weight = auxWeights[i][j][e][t];
                      if(mOperator == Util::OperatorAdd || mOperator == Util::OperatorSubtract) {
                         finalBias = finalBias * weight;
@@ -429,16 +424,15 @@ float CalibratorKriging::calcCovar(const Location& loc1, const Location& loc2) c
    return weight;
 }
 
-Parameters CalibratorKriging::train(const TrainingData& iData, int iOffset) const {
+Parameters CalibratorKriging::train(const std::vector<ObsEns>& iData) const {
    double timeStart = Util::clock();
-   std::vector<ObsEns> data = iData.getData(iOffset);
    float totalObs = 0;
    float totalFcst = 0;
    int counter = 0;
    // Compute predictors in model
-   for(int i = 0; i < data.size(); i++) {
-      float obs = data[i].first;
-      std::vector<float> ens = data[i].second;
+   for(int i = 0; i < iData.size(); i++) {
+      float obs = iData[i].first;
+      std::vector<float> ens = iData[i].second;
       float mean = Util::calculateStat(ens, Util::StatTypeMean);
       if(Util::isValid(obs) && Util::isValid(mean)) {
          totalObs += obs;
@@ -479,18 +473,22 @@ Parameters CalibratorKriging::train(const TrainingData& iData, int iOffset) cons
    return par;
 }
 
-std::string CalibratorKriging::description() {
+std::string CalibratorKriging::description(bool full) {
    std::stringstream ss;
-   ss << Util::formatDescription("-c kriging","Spreads bias in space by using kriging. A parameter file is required, which must have one column with the bias.")<< std::endl;
-   ss << Util::formatDescription("   radius=30000","Only use values from locations within this radius (in meters). Must be >= 0.") << std::endl;
-   ss << Util::formatDescription("   efoldDist=30000","How fast should the weight of a station reduce with distance? For cressman: linearly decrease to this distance (in meters); For barnes: reduce to 1/e after this distance (in meters). Must be >= 0.") << std::endl;
-   ss << Util::formatDescription("   maxElevDiff=undef","What is the maximum elevation difference (in meters) that bias can be spread to? Must be >= 0. Leave undefined if no reduction of bias in the vertical is desired.") << std::endl;
-   ss << Util::formatDescription("   auxVariable=undef","Should an auxilary variable be used to turn off kriging? For example turn off kriging where there is precipitation.") << std::endl;
-   ss << Util::formatDescription("   range=undef","What range of the auxillary variable should kriging be turned on for? For example use 0,0.3 to turn kriging off for precip > 0.3.") << std::endl;
-   ss << Util::formatDescription("   window=0","Use a time window to allow weighting of the kriging. Use the fraction of timesteps within +- window where the auxillary variable is within the range. Use 0 for no window.") << std::endl;
-   ss << Util::formatDescription("   type=cressman","Weighting function used in kriging. One of 'cressman', or 'barnes'.") << std::endl;
-   ss << Util::formatDescription("   operator=add","How should the bias be applied to the raw forecast? One of 'add', 'subtract', 'multiply', 'divide'. For add/subtract, the mean of the field is assumed to be 0, and for multiply/divide, 1.") << std::endl;
-   ss << Util::formatDescription("   approxDist=true","When computing the distance between two points, should the equirectangular approximation be used to save time? Should be good enough for most kriging purposes.") << std::endl;
-   ss << Util::formatDescription("   crossValidate=false","If true, then don't use the nearest point in the kriging. The end result is a field that can be verified against observations at the kriging points.") << std::endl;
+   if(full) {
+      ss << Util::formatDescription("-c kriging","Spreads bias in space by using kriging. A parameter file is required, which must have one column with the bias.")<< std::endl;
+      ss << Util::formatDescription("   radius=30000","Only use values from locations within this radius (in meters). Must be >= 0.") << std::endl;
+      ss << Util::formatDescription("   efoldDist=30000","How fast should the weight of a station reduce with distance? For cressman: linearly decrease to this distance (in meters); For barnes: reduce to 1/e after this distance (in meters). Must be >= 0.") << std::endl;
+      ss << Util::formatDescription("   maxElevDiff=undef","What is the maximum elevation difference (in meters) that bias can be spread to? Must be >= 0. Leave undefined if no reduction of bias in the vertical is desired.") << std::endl;
+      ss << Util::formatDescription("   auxVariable=undef","Should an auxilary variable be used to turn off kriging? For example turn off kriging where there is precipitation.") << std::endl;
+      ss << Util::formatDescription("   range=undef","What range of the auxillary variable should kriging be turned on for? For example use 0,0.3 to turn kriging off for precip > 0.3.") << std::endl;
+      ss << Util::formatDescription("   window=0","Use a time window to allow weighting of the kriging. Use the fraction of timesteps within +- window where the auxillary variable is within the range. Use 0 for no window.") << std::endl;
+      ss << Util::formatDescription("   type=cressman","Weighting function used in kriging. One of 'cressman', or 'barnes'.") << std::endl;
+      ss << Util::formatDescription("   operator=add","How should the bias be applied to the raw forecast? One of 'add', 'subtract', 'multiply', 'divide'. For add/subtract, the mean of the field is assumed to be 0, and for multiply/divide, 1.") << std::endl;
+      ss << Util::formatDescription("   approxDist=true","When computing the distance between two points, should the equirectangular approximation be used to save time? Should be good enough for most kriging purposes.") << std::endl;
+      ss << Util::formatDescription("   crossValidate=false","If true, then don't use the nearest point in the kriging. The end result is a field that can be verified against observations at the kriging points.") << std::endl;
+   }
+   else
+      ss << Util::formatDescription("-c kriging","Spreads bias in space by using kriging")<< std::endl;
    return ss.str();
 }

@@ -5,8 +5,8 @@ class ParameterFile;
 
 class CalibratorTemperature : public Calibrator {
    public:
-      CalibratorTemperature(const Options& iOptions);
-      static std::string description();
+      CalibratorTemperature(const Variable& iVariable, const Options& iOptions);
+      static std::string description(bool full=true);
       std::string name() const {return "temperature";};
    private:
       bool calibrateCore(const File& iFile, const ParameterFile* iParameterFile) const;

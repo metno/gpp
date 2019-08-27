@@ -2,7 +2,6 @@
 #include "File/File.h"
 #include "Calibrator/Calibrator.h"
 #include "Downscaler/Downscaler.h"
-#include "TrainingData.h"
 
 SetupTrain::SetupTrain(const std::vector<std::string>& argv) {
 
@@ -11,7 +10,6 @@ SetupTrain::SetupTrain(const std::vector<std::string>& argv) {
    }
 
    // Set initial non-working values
-   Variable::Type variable = Variable::None;
    method = NULL;
    output = NULL;
 
@@ -20,14 +18,60 @@ SetupTrain::SetupTrain(const std::vector<std::string>& argv) {
    State state = START;
    State prevState = START;
 
-   std::string dataFilename = argv[0];
-   trainingData = new TrainingData(dataFilename);
+   std::string variableName = "";
+
+   // Process obs/fcst filenames and options
+   Options obsOptions, fcstOptions;
+   std::string obsFilename, fcstFilename;
+   int index = 0;
+   while(index < argv.size()) {
+      std::string arg = argv[index];
+      if(obsFilename == "") {
+         obsFilename = arg;
+      }
+      else if(fcstFilename == "") {
+         if(Util::hasChar(arg, '=')) {
+            obsOptions.addOptions(arg);
+         }
+         else {
+            fcstFilename = arg;
+         }
+      }
+      else {
+         if(Util::hasChar(arg, '=')) {
+            fcstOptions.addOptions(arg);
+         }
+         else {
+            break;
+         }
+      }
+      index++;
+   }
+   std::vector<std::string> obsFilenames = Util::glob(obsFilename);
+   std::vector<std::string> fcstFilenames = Util::glob(fcstFilename);
+
+   if(obsFilenames.size() == 0 || fcstFilenames.size() == 0) {
+      Util::error("No valid obs or fcst files");
+   }
+   for(int i = 0; i < obsFilenames.size(); i++) {
+      File* file = File::getScheme(obsFilenames[i], obsOptions, true);
+      if(file == NULL) {
+         Util::error("Could not open '" + obsFilenames[i] + "'");
+      }
+      observations.push_back(file);
+   }
+   for(int i = 0; i < fcstFilenames.size(); i++) {
+      File* file = File::getScheme(fcstFilenames[i], fcstOptions, true);
+      if(file == NULL) {
+         Util::error("Could not open '" + fcstFilenames[i] + "'");
+      }
+      forecasts.push_back(file);
+   }
 
    Options oOptions;
    Options mOptions;
-   std::string outputType = "";
+   std::string outputFilename = "";
    std::string methodType = "";
-   int index = 1;
    std::string errorMessage = "";
    while(true) {
       // std::cout << state << std::endl;
@@ -62,12 +106,12 @@ SetupTrain::SetupTrain(const std::vector<std::string>& argv) {
             state = ERROR;
          }
          else {
-            if(outputType != "") {
+            if(outputFilename != "") {
                state = ERROR;
                errorMessage = "Duplicate '-p'";
             }
             else {
-               outputType = argv[index];
+               outputFilename = argv[index];
                index++;
                state = OUTPUTOPT;
             }
@@ -142,12 +186,13 @@ SetupTrain::SetupTrain(const std::vector<std::string>& argv) {
             state = ERROR;
          }
          else {
-            if(variable != Variable::None) {
+            // TODO
+            if(false) {
                state = ERROR;
                errorMessage = "Duplicate '-v'";
             }
             else {
-               variable = Variable::getType(argv[index]);
+               variableName = argv[index];
                index++;
                if(argv.size() <= index) {
                   state = END;
@@ -172,10 +217,33 @@ SetupTrain::SetupTrain(const std::vector<std::string>& argv) {
          }
       }
       else if(state == END) {
-         mOptions.addOption("variable", Variable::getTypeName(variable));
-         method = Calibrator::getScheme(methodType, mOptions);
-         output = ParameterFile::getScheme(outputType, oOptions);
-         break;
+         Variable inputVariable, outputVariable;
+         bool found = forecasts[0]->getVariable(variableName, inputVariable);
+         if(!found) {
+            std::stringstream ss;
+            ss << "Forecast files do not define variable of type '" << variableName << "'";
+            Util::error(ss.str());
+         }
+         found = observations[0]->getVariable(variableName, outputVariable);
+         if(!found) {
+            std::stringstream ss;
+            ss << "Observation files do not define variable of type '" << variableName << "'";
+            Util::error(ss.str());
+         }
+         variable = Variable(variableName);
+
+         downscaler = Downscaler::getScheme("nearestNeighbour", inputVariable, outputVariable, Options());
+         method = Calibrator::getScheme(methodType, outputVariable, mOptions);
+         oOptions.addOption("file", outputFilename);
+         std::string schemeName;
+         if(!oOptions.getValue("type", schemeName)) {
+            state = ERROR;
+            errorMessage = "Parameter file missing 'type': " + oOptions.toString();
+         }
+         else {
+            output = ParameterFile::getScheme(schemeName, oOptions, true);
+            break;
+         }
       }
       else if(state == ERROR) {
          std::stringstream ss;
@@ -198,7 +266,11 @@ SetupTrain::SetupTrain(const std::vector<std::string>& argv) {
    }
 }
 SetupTrain::~SetupTrain() {
-   delete trainingData;
+   for(int i = 0; i < observations.size(); i++)
+      delete observations[i];
+   for(int i = 0; i < forecasts.size(); i++)
+      delete forecasts[i];
    delete output;
    delete method;
+   delete downscaler;
 }

@@ -1,3 +1,99 @@
+gridpp (0.3.1) precise; urgency=low
+
+  * New features:
+      Variables are referenced by their NetCDF variable name
+    - Adds cmake compilation
+    - Adds -c oi to perform optimal interpolation
+    - Gradient downscaler can use temperature at model levels (instead of T2m)
+      when computing gradient
+    - Adds coastal regression in -d gradient
+    - Adds -c coastal, a bias-correction scheme that weights land and sea
+      tempatures from a neighbourhood
+    - Variable names can be overridden by passing in a variable map file
+  * Backwards-incompatible changes:
+    - Gradient downscaler options are different. Use -d gradientOld to get
+      previous behaviour.
+    - Parameter text files must contain header
+    - Parameter files are specified differently: -p <filename> type=<type>
+    - The command-line interface to this version has changed significantly.
+    - Names as they appear in the file are used to identify variables. I.e.
+      use -v air_temperture_2m instead of -v T.
+    - -c diagnose replaced by -c diagnoseHumidity and -c diagnoseWind
+
+ -- Thomas Nipen <thomasn@met.no>  Fri, 14 Sep 2018 10:00:00 +0200
+
+gridpp (0.2.10) precise; urgency=low
+
+  * Adds -d bilinear
+  * Adds bilinear interpolation to -d gradient
+
+ -- Thomas Nipen <thomas.nipen@met.no>  Mon, 20 Nov 2017 21:41:25 +0200
+
+gridpp (0.2.9) precise; urgency=low
+
+  * Adds -c diagnose for dewpoint temperature and RH
+  * Diagnoses altitude from geopotential height for EC files
+  * Fixes bug in Kalman Filter formulation
+
+ -- Thomas Nipen <thomas.nipen@met.no>  Tue, 6 Jun 2017 10:15:25 +0200
+
+gridpp (0.2.8) precise; urgency=low
+
+  * Fixes bug with -c diagnose in multi-thread mode
+
+ -- Thomas Nipen <thomas.nipen@met.no>  Mon, 18 Apr 2017 15:14:00 +0100
+
+gridpp (0.2.7) precise; urgency=low
+
+  * Adds -c mask
+
+ -- Thomas Nipen <thomas.nipen@met.no>  Thu, 17 Nov 2016 15:36:47 +0100
+
+gridpp (0.2.6) precise; urgency=low
+
+  * Adds precipitation rate variable
+  * Adds specification of lat/lon dimension/variable  names in netcdf files
+
+ -- Thomas Nipen <thomas.nipen@met.no>  Wed, 22 Jun 2016 15:26:17 +0200
+
+gridpp (0.2.5) precise; urgency=low
+
+  * Allows varying radius in -c neighbourhood
+
+ -- Thomas Nipen <thomas.nipen@met.no>  Wed, 22 Jun 2016 11:09:33 +0200
+
+gridpp (0.2.4) precise; urgency=low
+
+  * Allows multiple input and output files
+  * Faster calibration when parameter grid is different than output grid
+  * -c altitude works for Ec file type
+
+ -- Thomas Nipen <thomas.nipen@met.no>  Tue, 15 Mar 2016 14:33:43 +0100
+
+gridpp (0.2.3) precise; urgency=low
+
+  * Adds even more carrige returns in NorcomQnh file format
+
+ -- Thomas Nipen <thomas.nipen@met.no>  Fri, 03 Jun 2016 11:30:33 +0200
+
+gridpp (0.2.2) precise; urgency=low
+
+  * Adds carriage returns in NorcomQnh file format
+
+ -- Thomas Nipen <thomas.nipen@met.no>  Thu, 26 May 2016 10:11:34 +0200
+
+gridpp (0.2.1) precise; urgency=low
+
+  * Gridded parameter estimation (gridpp_train)
+  * Faster writing of Netcdf files
+  * Improved flexibility of specifying kriging precip smoothing
+  * Added -c altitude
+  * Improved Kalman filter program
+  * Smaller memory footprint for processing EC file types
+  * Added -v TMIn and -v TMax
+
+ -- Thomas Nipen <thomas.nipen@met.no>  Wed, 26 May 2016 10:09:00 +0100
+
 gridpp (0.2.0) precise; urgency=low
 
   * Adds new calibrators and allows gridded parameter files

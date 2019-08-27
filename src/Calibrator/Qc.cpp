@@ -4,19 +4,20 @@
 #include <boost/math/distributions/gamma.hpp>
 #include "../Util.h"
 #include "../File/File.h"
-CalibratorQc::CalibratorQc(Variable::Type iVariable, const Options& iOptions):
-      Calibrator(iOptions),
-      mVariable(iVariable),
+CalibratorQc::CalibratorQc(const Variable& iVariable, const Options& iOptions):
+      Calibrator(iVariable, iOptions),
       mMin(Util::MV),
       mMax(Util::MV) {
    iOptions.getValue("min", mMin);
    iOptions.getValue("max", mMax);
-   Util::warning("CalibratorQc: both 'min' and 'max' are missing, therefore no correction is applied.");
+   if(!Util::isValid(mMin) && !Util::isValid(mMax))
+      Util::warning("CalibratorQc: both 'min' and 'max' are missing, therefore no correction is applied.");
+   iOptions.check();
 }
 
 bool CalibratorQc::calibrateCore(File& iFile, const ParameterFile* iParameterFile) const {
-   int nLat = iFile.getNumLat();
-   int nLon = iFile.getNumLon();
+   int nLat = iFile.getNumY();
+   int nLon = iFile.getNumX();
    int nEns = iFile.getNumEns();
    int nTime = iFile.getNumTime();
 
@@ -44,10 +45,14 @@ bool CalibratorQc::calibrateCore(File& iFile, const ParameterFile* iParameterFil
    return true;
 }
 
-std::string CalibratorQc::description() {
+std::string CalibratorQc::description(bool full) {
    std::stringstream ss;
-   ss << Util::formatDescription("-c qc", "Apply quality control, ensuring the values are within the bounds of the variable. If the original value is missing, no correction is applied.") << std::endl;
-   ss << Util::formatDescription("   min=undef", "Force the minimum allowed value. If not provided, don't force a minimum.") << std::endl;
-   ss << Util::formatDescription("   max=undef", "Force the maximum allowed value. If not provided, don't force a maximum.") << std::endl;
+   if(full) {
+      ss << Util::formatDescription("-c qc", "Apply quality control, ensuring the values are within the bounds of the variable. If the original value is missing, no correction is applied.") << std::endl;
+      ss << Util::formatDescription("   min=undef", "Force the minimum allowed value. If not provided, don't force a minimum.") << std::endl;
+      ss << Util::formatDescription("   max=undef", "Force the maximum allowed value. If not provided, don't force a maximum.") << std::endl;
+   }
+   else
+      ss << Util::formatDescription("-c qc", "Ensures values are within bounds") << std::endl;
    return ss.str();
 }

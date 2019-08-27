@@ -12,10 +12,10 @@ typedef std::vector<std::vector<int> > vec2Int;
 //! Converts fields from one grid to another
 class Downscaler : public Scheme {
    public:
-      Downscaler(Variable::Type iVariable, const Options& iOptions);
+      Downscaler(const Variable& iInputVariable, const Variable& iOutputVariable, const Options& iOptions);
       virtual ~Downscaler() {};
       bool downscale(const File& iInput, File& iOutput) const;
-      static Downscaler* getScheme(std::string iName, Variable::Type iVariable, const Options& iOptions);
+      static Downscaler* getScheme(std::string iName, const Variable& iInputVariable, const Variable& iOutputVariable, const Options& iOptions);
       virtual std::string name() const = 0;
 
       //! Create a nearest-neighbour map. For each grid point in iTo, find the index into the grid
@@ -34,10 +34,15 @@ class Downscaler : public Scheme {
       //! @param iJ J-index of nearest point. Set to Util::MV if no nearest neighbour.
       static void getNearestNeighbourBruteForce(const File& iFrom, float iLon, float iLat, int& iI, int &iJ);
 
-      static std::string getDescriptions();
+      // @param full Give full descriptions, including options
+      static std::string getDescriptions(bool full=true);
+
+      //! Clears nearest neighbour cache
+      static void clearCache();
    protected:
       virtual void downscaleCore(const File& iInput, File& iOutput) const = 0;
-      Variable::Type mVariable;
+      Variable mInputVariable;
+      Variable mOutputVariable;
    private:
       // Cache calls to nearest neighbour
       //! Is the nearest neighbours in @param iFrom for each point in @param iTo already computed?
@@ -48,7 +53,9 @@ class Downscaler : public Scheme {
 };
 #include "NearestNeighbour.h"
 #include "Gradient.h"
-#include "Smart.h"
-#include "Bypass.h"
+#include "Bilinear.h"
 #include "Pressure.h"
+#include "Smart.h"
+#include "Upscale.h"
+#include "Bypass.h"
 #endif

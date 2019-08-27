@@ -6,20 +6,15 @@
 #include "../File/File.h"
 #include "../ParameterFile/ParameterFile.h"
 #include "../Parameters.h"
-#include "../TrainingData.h"
-CalibratorBct::CalibratorBct(Variable::Type iMainPredictor, const Options& iOptions):
-      Calibrator(iOptions),
-      mMainPredictor(iMainPredictor),
+CalibratorBct::CalibratorBct(const Variable& iVariable, const Options& iOptions):
+      Calibrator(iVariable, iOptions),
       mMaxEnsMean(100) {
+   iOptions.check();
 }
 
 bool CalibratorBct::calibrateCore(File& iFile, const ParameterFile* iParameterFile) const {
-   if(iParameterFile == NULL) {
-      Util::error("Calibrator 'bct' requires a parameter file");
-   }
-
-   int nLat = iFile.getNumLat();
-   int nLon = iFile.getNumLon();
+   int nLat = iFile.getNumY();
+   int nLon = iFile.getNumX();
    int nEns = iFile.getNumEns();
    int nTime = iFile.getNumTime();
    vec2 lats = iFile.getLats();
@@ -28,20 +23,20 @@ bool CalibratorBct::calibrateCore(File& iFile, const ParameterFile* iParameterFi
 
    // Loop over offsets
    for(int t = 0; t < nTime; t++) {
-      int numInvalidRaw = 0;
-      int numInvalidCal = 0;
+      Field& field = *iFile.getField(mVariable, t);
 
-      Field& field = *iFile.getField(mMainPredictor, t);
-
-      Parameters parameters;
+      Parameters parametersGlobal;
       if(!iParameterFile->isLocationDependent())
-         parameters = iParameterFile->getParameters(t);
+         parametersGlobal = iParameterFile->getParameters(t);
 
-      #pragma omp parallel for reduction(+:numInvalidRaw, numInvalidCal)
+      #pragma omp parallel for
       for(int i = 0; i < nLat; i++) {
          for(int j = 0; j < nLon; j++) {
+            Parameters parameters;
             if(iParameterFile->isLocationDependent())
                parameters = iParameterFile->getParameters(t, Location(lats[i][j], lons[i][j], elevs[i][j]));
+            else
+               parameters = parametersGlobal;
 
             // Compute ensemble mean
             float ensMean = 0;
@@ -125,18 +120,6 @@ bool CalibratorBct::calibrateCore(File& iFile, const ParameterFile* iParameterFi
             }
          }
       }
-      if(numInvalidRaw > 0) {
-         std::stringstream ss;
-         ss << "File '" << iFile.getFilename() << "' missing " << numInvalidRaw
-            << "/" << nLat * nLon << " ensembles for timestep " << t << ".";
-         Util::warning(ss.str());
-      }
-      if(numInvalidCal > 0) {
-         std::stringstream ss;
-         ss << "Calibrator produces '" << numInvalidRaw
-            << "/" << nLat * nLon << " invalid ensembles for timestep " << t << ".";
-         Util::warning(ss.str());
-      }
    }
    return true;
 }
@@ -214,14 +197,18 @@ float CalibratorBct::getInvCdf(float iQuantile, float iEnsMean, float iEnsStd, c
    return value;
 }
 
-std::string CalibratorBct::description() {
+std::string CalibratorBct::description(bool full) {
    std::stringstream ss;
-   ss << Util::formatDescription("-c bct", "Calibrates an ensemble using a Box-Cox t-distribution, suitable for parameters like windspeed. The distribution has four parameters:") << std::endl;
-   ss << Util::formatDescription("", "* mean  = a + b * ensmean") << std::endl;
-   ss << Util::formatDescription("", "* sigma = exp(c + d * ensstd^(1/3)") << std::endl;
-   ss << Util::formatDescription("", "* nu = e + f * ensmean") << std::endl;
-   ss << Util::formatDescription("", "* tau = exp(g)") << std::endl;
-   ss << Util::formatDescription("", "where ensmean is the ensemble mean, and ensstd is the ensemble standard deviation. The parameter set must contain 7 columns with the values [a b c d e f g].") << std::endl;
-   ss << Util::formatDescription("   maxEnsMean=100", "Upper limit of what the ensemble mean is allowed to be when passed into the distribution. This effectively prevents the distribution from giving very high values.") << std::endl;
+   if(full) {
+      ss << Util::formatDescription("-c bct", "Calibrates an ensemble using a Box-Cox t-distribution, suitable for parameters like windspeed. The distribution has four parameters:") << std::endl;
+      ss << Util::formatDescription("", "* mean  = a + b * ensmean") << std::endl;
+      ss << Util::formatDescription("", "* sigma = exp(c + d * ensstd^(1/3)") << std::endl;
+      ss << Util::formatDescription("", "* nu = e + f * ensmean") << std::endl;
+      ss << Util::formatDescription("", "* tau = exp(g)") << std::endl;
+      ss << Util::formatDescription("", "where ensmean is the ensemble mean, and ensstd is the ensemble standard deviation. The parameter set must contain 7 columns with the values [a b c d e f g].") << std::endl;
+      ss << Util::formatDescription("   maxEnsMean=100", "Upper limit of what the ensemble mean is allowed to be when passed into the distribution. This effectively prevents the distribution from giving very high values.") << std::endl;
+   }
+   else
+      ss << Util::formatDescription("-c bct", "Calibrates an ensemble using a Box-Cox t-distribution") << std::endl;
    return ss.str();
 }

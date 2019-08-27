@@ -9,7 +9,7 @@ float NetcdfUtil::getMissingValue(int iFile, int iVar) {
    return fillValue;
 }
 
-int NetcdfUtil::getTotalSize(int iFile, int iVar) {
+long NetcdfUtil::getTotalSize(int iFile, int iVar) {
    int ndims;
    int status = nc_inq_varndims(iFile, iVar, &ndims);
    handleNetcdfError(status, "Could not get number of dimensions");
@@ -18,7 +18,7 @@ int NetcdfUtil::getTotalSize(int iFile, int iVar) {
    status = nc_inq_vardimid(iFile, iVar, dims);
    handleNetcdfError(status, "Could not get dimension ids");
 
-   int total = 1;
+   long total = 1;
    for(int i = 0; i < ndims; i++) {
       size_t size;
       int status = nc_inq_dimlen(iFile, dims[i], &size);

@@ -8,8 +8,8 @@ namespace {
 
    TEST_F(FieldTest, access) {
       Field field(1, 1, 3, 2);
-      ASSERT_EQ(1, field.getNumLat());
-      ASSERT_EQ(1, field.getNumLon());
+      ASSERT_EQ(1, field.getNumY());
+      ASSERT_EQ(1, field.getNumX());
       ASSERT_EQ(3, field.getNumEns());
       EXPECT_FLOAT_EQ(2, field(0,0,0));
       EXPECT_FLOAT_EQ(2, field(0,0,1));

@@ -4,14 +4,13 @@
 #include "../File/File.h"
 #include "../ParameterFile/ParameterFile.h"
 #include "../Downscaler/Pressure.h"
-#include "../TrainingData.h"
-CalibratorSort::CalibratorSort(Variable::Type iVariable, const Options& iOptions) :
-      Calibrator(iOptions),
-      mVariable(iVariable) {
+CalibratorSort::CalibratorSort(const Variable& iVariable, const Options& iOptions) :
+      Calibrator(iVariable, iOptions) {
+   iOptions.check();
 }
 bool CalibratorSort::calibrateCore(File& iFile, const ParameterFile* iParameterFile) const {
-   int nLat = iFile.getNumLat();
-   int nLon = iFile.getNumLon();
+   int nLat = iFile.getNumY();
+   int nLon = iFile.getNumX();
    int nEns = iFile.getNumEns();
    int nTime = iFile.getNumTime();
    vec2 lats = iFile.getLats();
@@ -47,8 +46,11 @@ bool CalibratorSort::calibrateCore(File& iFile, const ParameterFile* iParameterF
    return true;
 }
 
-std::string CalibratorSort::description() {
+std::string CalibratorSort::description(bool full) {
    std::stringstream ss;
-   ss << Util::formatDescription("-c sort", "Sorts the ensemble members from lowest to highest. Any missing members are placed last.") << std::endl;
+   if(full)
+      ss << Util::formatDescription("-c sort", "Sorts ensemble members from lowest to highest. Any missing members are placed last.") << std::endl;
+   else
+      ss << Util::formatDescription("-c sort", "Sorts ensemble members from lowest to highest") << std::endl;
    return ss.str();
 }

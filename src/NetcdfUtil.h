@@ -7,7 +7,7 @@
 class NetcdfUtil {
    public:
       static float getMissingValue(int iFile, int iVar);
-      static int   getTotalSize(int iFile, int iVar);
+      static long  getTotalSize(int iFile, int iVar);
       static void handleNetcdfError(int status, std::string message="");
 };
 #endif

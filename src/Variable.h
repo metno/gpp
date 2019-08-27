@@ -2,68 +2,52 @@
 #define VARIABLE_H
 #include <iostream>
 #include <vector>
+#include "Options.h"
 
 //! Represents a meteorological variable and its metadata
 class Variable {
    public:
-      //! Variable types
-      enum Type {
-         Precip       = 0,    // Hourly amount ending at the specified time
-         PrecipAcc    = 1,    // Accumulated ending at the specified time
-         Pop          = 2,    // Probability of precipitation
-         Pop6h        = 3,    // Probability of precipitation for the last 6 hours
-         PrecipLow    = 4,    // Low estimate of precipitation
-         PrecipMiddle = 5,    // Middle estimate of precipitation
-         PrecipHigh   = 6,    // High estimate of precipitation
-         Cloud        = 10,   // Cloud cover (between 0 and 1)
-         T            = 20,   // 2m temperature (K)
-         U            = 30,   // 10m U-wind (m/s)
-         Xwind        = 31,   // 10m X-wind (m/s)
-         V            = 40,   // 10m V-wind (m/s)
-         Ywind        = 41,   // 10m Y-wind (m/s)
-         W            = 50,   // 10m windspeed (m/s)
-         WD           = 55,   // Wind direction (degrees, from north 0)
-         RH           = 60,   // Reliative humidity (%)
-         Phase        = 70,   // Precip phase
-         P            = 80,   // Surface pressure (pa)
-         MSLP         = 85,   // Mean sea-level pressure (pa)
-         QNH          = 88,   // Pressure reduced to sea-level using standard atmosphere (ICAO) (pa)
-         SwinAcc      = 100,  // Accumulated incoming shortware radiation
-         LwinAcc      = 101,  // Accumulated incoming longwave radiation
-         Fake         = 1000, // Fake variable used for testing
-         None         = -999  // Non-existant variable
-      };
 
-      //! Convert type to string
-      static std::string getTypeName(Type iType);
+      Variable();
+      Variable(std::string iName, float iMin, float iMax, std::string iUnits, std::string iStandardName, int iLevel=Util::MV);
+      Variable(std::string iName, std::string iUnits="", std::string iStandardName="", int iLevel=Util::MV);
+      Variable(const Options& iOptions);
+
+      // Name of variable
+      std::string name() const;
+      void name(std::string);
 
       //! Get the minimum possible attainable value for this variable
-      static float getMin(Type iType);
+      float min() const;
+      void min(float iValue);
 
       //! Get the maximum possible attainable value for this variable
-      static float getMax(Type iType);
+      float max() const;
+      void max(float iValue);
 
-      //! Convert string to type
-      static Type getType(std::string iName);
+      //! Get the level in the heigh dimension
+      float level() const;
+      void level(int iValue);
 
       //! Returns the units of the variable
-      static std::string getUnits(Type iType);
+      std::string units() const;
+      void units(std::string iValue);
 
       //! Returns the NetcdfCF standard name
-      static std::string getStandardName(Type iType);
+      std::string standardName() const;
+      void standardName(std::string iValue);
 
-      //! Description of all defined variables
-      static std::string getDescriptions();
+      void add(const Options& iOptions);
 
-      //! Vector of all defined variables
-      static std::vector<Type> getAllVariables();
+      bool operator<(const Variable &right) const;
+      bool operator==(const Variable &right) const;
 
-      //! Precipitation phase
-      enum Phase {
-         PhaseNone  = 0,
-         PhaseRain  = 1,
-         PhaseSleet = 2,
-         PhaseSnow  = 3
-      };
+   private:
+      float mMin;
+      float mMax;
+      std::string mUnits;
+      std::string mStandardName;
+      std::string mName;
+      int mLevel;
 };
 #endif

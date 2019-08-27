@@ -3,7 +3,7 @@ Maintainer: Thomas Nipen <thomasn@met.no>
 Section: misc
 Priority: optional
 Standards-Version: 3.9.2
-Build-Depends: debhelper (>= 9.0.0), cmake, libnetcdf-dev (>= 4.1.1-6), libboost-dev, libgtest-dev, libgsl0-dev, libblas-dev
+Build-Depends: debhelper (>= 9.0.0), cmake, libnetcdf-dev (>= 4.1.1-6), libboost-dev, libgtest-dev, libgsl0-dev, libblas-dev, libarmadillo-dev
 Homepage: https://github.com/metno/gridpp
 Vcs-Git: git@github.com:metno/gridpp.git
 Vcs-Browser: https://github.com/metno/gridpp
@@ -12,6 +12,4 @@ Package: gridpp
 Architecture: amd64
 Depends: ${release:Depends}, ${shlibs:Depends}
 Description: Gridded post-processor
- The program post-processes an AROME or ECMWF NetCDF file by using various
- downscaling and calibration methods. Post-processed forecasts are placed in a
- second Netcdf file, which has the desired output grid.
+ A command-line tool for post-process gridded NetCDF files by using various downscaling and calibration methods.

@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <cmath>
 
 typedef std::vector<std::vector<float> > vec2; // Lat, Lon
 
@@ -15,25 +16,34 @@ class Util {
       //! Issues a warning message to std::cout
       static void warning(std::string iMessage);
 
-      //! Issues a status message to std::cout
-      static void status(std::string iMessage);
+      //! Issues a status message to std::cout. Add new line to the end.
+      static void status(std::string iMessage, bool iNewLine=true);
+
+      //! Issues a info message to std::cout
+      static void info(std::string iMessage);
 
       //! True will force calls to Util::error to show error messages.
       //! Calls to errors will cause abort regardless of this setting.
       static void setShowError(bool flag);
-      
+
       //! True will force calls to Util::warning to show warning messages
       static void setShowWarning(bool flag);
-      
+
       //! True will force calls to Util::status to show status messages
       static void setShowStatus(bool flag);
-      
+
+      //! True will force calls to Util::info to show status messages
+      static void setShowInfo(bool flag);
+
       //! Missing value indicator
       static float MV;
 
-      //! \brief Checks if a value is valid
+      //! \brief Checks if a value is valid. Inlined for improved performance on some systems
       //! @return false if iValue equals Util::MV or is +-inf or nan. Returns true otherwise.
-      static bool isValid(float iValue);
+      inline static bool isValid(float iValue) {
+         return !std::isnan(iValue) && !std::isinf(iValue) && iValue != Util::MV;
+      }
+
 
       //! Checks if the file exists
       static bool exists(const std::string& iFilename);
@@ -58,6 +68,9 @@ class Util {
       static float rad2deg(float rad);
 
       static float pi;
+
+      // Return a vector of filenames from a single string containing wildcards and commas
+      static std::vector<std::string> glob(std::string iFilenames);
 
       static std::string gridppVersion();
       
@@ -95,7 +108,7 @@ class Util {
       
       //! \brief Creates a vector of strings by splitting string on each space
       //! Multiple consecutive spaces are treated as one space
-      static std::vector<std::string> split(std::string iString);
+      static std::vector<std::string> split(std::string iString, std::string iDelims=" ");
 
       //! \brief Computes the logit of p
       //! @param p Must lie in the interval (0,1)
@@ -121,8 +134,12 @@ class Util {
 
       enum StatType {
          StatTypeMean      = 0,
-         StatTypeStd       = 30,
-         StatTypeQuantile  = 40
+         StatTypeMin       = 10,
+         StatTypeMedian    = 20,
+         StatTypeMax       = 30,
+         StatTypeQuantile  = 40,
+         StatTypeStd       = 50,
+         StatTypeSum       = 60
       };
 
       enum Operator {
@@ -134,6 +151,7 @@ class Util {
 
       //! Applies statistics operator to array. Missing values are ignored.
       static float calculateStat(const std::vector<float>& iArray, Util::StatType iStatType, float iQuantile=Util::MV);
+      static bool getStatType(std::string iName, Util::StatType& iType);
       
       //! \brief Comparator class for sorting pairs using the first entry.
       //! Sorts from smallest to largest
@@ -150,6 +168,10 @@ class Util {
 
       static float interpolate(float x, const std::vector<float>& iX, const std::vector<float>& iY);
 
+      //! @param addConst Add a constant coefficient to the predictors. The coefficient will appear
+      //! first in the output vector.
+      static std::vector<float> regression(const std::vector<float>& iPredictand, const std::vector<std::vector<float> >& iPredictors, bool iAddConst=false);
+
       // Array operations
       //! Note: iValues must be sorted
       //! Finds index into array pointing to the largest element smaller than or equal to iX.
@@ -162,8 +184,11 @@ class Util {
       //! multiple values, the last element is returned.
       static int getUpperIndex(float iX, const std::vector<float>& iValues);
 
-      //! Copy the file with filename iFrom to filename iTo
+      //! Copy the file with filename iFrom to filename iTo. Returns true if successful.
       static bool copy(std::string iFrom, std::string iTo);
+     
+      //! Remove the file with filename. Returns true if successful.
+      static bool remove(std::string iFilename);
      
       //! \brief Comparator class for sorting pairs using the second entry.
       //! Sorts from smallest to largest
@@ -173,8 +198,9 @@ class Util {
          }
       };
    private:
+      static bool mShowStatus;
       static bool mShowError;
       static bool mShowWarning;
-      static bool mShowStatus;
+      static bool mShowInfo;
 };
 #endif

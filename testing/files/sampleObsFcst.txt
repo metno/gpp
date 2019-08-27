@@ -1,1 +1,2 @@
+time lat lon elev p1 p2
 0 5 5 100 2 0

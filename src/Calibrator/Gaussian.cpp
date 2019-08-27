@@ -6,11 +6,9 @@
 #include "../File/File.h"
 #include "../ParameterFile/ParameterFile.h"
 #include "../Parameters.h"
-#include "../TrainingData.h"
-CalibratorGaussian::CalibratorGaussian(Variable::Type iMainPredictor, const Options& iOptions):
-      Calibrator(iOptions),
-      mMainPredictor(iMainPredictor),
-      mNeighbourhoodSize(0), 
+CalibratorGaussian::CalibratorGaussian(const Variable& iVariable, const Options& iOptions):
+      Calibrator(iVariable, iOptions),
+      mNeighbourhoodSize(0),
       mLogLikelihoodTolerance(1e-5) {
 
    iOptions.getValue("neighbourhoodSize", mNeighbourhoodSize);
@@ -19,15 +17,12 @@ CalibratorGaussian::CalibratorGaussian(Variable::Type iMainPredictor, const Opti
       ss << "CalibratorGaussian: neighbourhoodSize (" << mNeighbourhoodSize << ") must be >= 0";
       Util::error(ss.str());
    }
+   iOptions.check();
 }
 
 bool CalibratorGaussian::calibrateCore(File& iFile, const ParameterFile* iParameterFile) const {
-   if(iParameterFile == NULL) {
-      Util::error("Calibrator 'gaussian' requires a parameter file");
-   }
-
-   int nLat = iFile.getNumLat();
-   int nLon = iFile.getNumLon();
+   int nLat = iFile.getNumY();
+   int nLon = iFile.getNumX();
    int nEns = iFile.getNumEns();
    int nTime = iFile.getNumTime();
    vec2 lats = iFile.getLats();
@@ -36,17 +31,20 @@ bool CalibratorGaussian::calibrateCore(File& iFile, const ParameterFile* iParame
 
    // Loop over offsets
    for(int t = 0; t < nTime; t++) {
-      Field& field = *iFile.getField(mMainPredictor, t);
+      Field& field = *iFile.getField(mVariable, t);
 
-      Parameters parameters;
+      Parameters parametersGlobal;
       if(!iParameterFile->isLocationDependent())
-         parameters = iParameterFile->getParameters(t);
+         parametersGlobal = iParameterFile->getParameters(t);
 
       #pragma omp parallel for
       for(int i = 0; i < nLat; i++) {
          for(int j = 0; j < nLon; j++) {
+            Parameters parameters;
             if(iParameterFile->isLocationDependent())
                parameters = iParameterFile->getParameters(t, Location(lats[i][j], lons[i][j], elevs[i][j]));
+            else
+               parameters = parametersGlobal;
 
             // Compute model variables
             float total2 = 0;
@@ -209,20 +207,19 @@ float CalibratorGaussian::getPdf(float iThreshold, float iEnsMean, float iEnsSpr
    return pdf;
 }
 
-Parameters CalibratorGaussian::train(const TrainingData& iData, int iOffset) const {
-   std::vector<ObsEns> data = iData.getData(iOffset);
-   if(data.size() == 0) {
+Parameters CalibratorGaussian::train(const std::vector<ObsEns>& iData) const {
+   if(iData.size() == 0) {
       std::cout << "No data to train on...";
       return Parameters();
    }
    std::vector<float> obs, mean, spread;
-   obs.resize(data.size(), Util::MV);
-   mean.resize(data.size(), Util::MV);
-   spread.resize(data.size(), Util::MV);
+   obs.resize(iData.size(), Util::MV);
+   mean.resize(iData.size(), Util::MV);
+   spread.resize(iData.size(), Util::MV);
    // Compute predictors in model
-   for(int i = 0; i < data.size(); i++) {
-      obs[i] = data[i].first;
-      std::vector<float> ens = data[i].second;
+   for(int i = 0; i < iData.size(); i++) {
+      obs[i] = iData[i].first;
+      std::vector<float> ens = iData[i].second;
       mean[i] = Util::calculateStat(ens, Util::StatTypeMean);
       spread[i] = Util::calculateStat(ens, Util::StatTypeStd);
    }
@@ -392,12 +389,16 @@ void CalibratorGaussian::my_fdf(const gsl_vector *x, void *params, double *f, gs
 }
 */
 
-std::string CalibratorGaussian::description() {
+std::string CalibratorGaussian::description(bool full) {
    std::stringstream ss;
-   ss << Util::formatDescription("-c gaussian", "Calibrates an ensemble using a Gaussian distribution, suitable for parameters like temperature. The distribution has two parameters:") << std::endl;
-   ss << Util::formatDescription("", "* mean  = ensmean") << std::endl;
-   ss << Util::formatDescription("", "* sigma = exp(a + b * ensspread)") << std::endl;
-   ss << Util::formatDescription("", "where ensmean is the ensemble mean, and ensspread is the standard deviation of members. The parameter set must contain 8 columns with the values [a b].") << std::endl;
-   ss << Util::formatDescription("   neighbourhoodSize=0", "Increase the ensemble by taking all gridpoints within a neighbourhood. A value of 0 means no neighbourhood is used.") << std::endl;
+   if(full) {
+      ss << Util::formatDescription("-c gaussian", "Ensemble spread calibration based on a Gaussian distribution. The distribution has two parameters:") << std::endl;
+      ss << Util::formatDescription("", "* mean  = ensmean") << std::endl;
+      ss << Util::formatDescription("", "* sigma = exp(a + b * ensspread)") << std::endl;
+      ss << Util::formatDescription("", "where ensmean is the ensemble mean, and ensspread is the standard deviation of members. The parameter set must contain 8 columns with the values [a b].") << std::endl;
+      ss << Util::formatDescription("   neighbourhoodSize=0", "Increase the ensemble by taking all gridpoints within a neighbourhood. A value of 0 means no neighbourhood is used.") << std::endl;
+   }
+   else
+      ss << Util::formatDescription("-c gaussian", "Ensemble spread calibration based on a Gaussian distribution") << std::endl;
    return ss.str();
 }

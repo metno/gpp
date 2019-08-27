@@ -3,20 +3,18 @@
 #include "Calibrator.h"
 class ParameterFile;
 class Parameters;
-class TrainingData;
 
 //! Applies polynomial regression to forecasts
 class CalibratorRegression : public Calibrator {
    public:
-      CalibratorRegression(Variable::Type iVariable, const Options& iOptions);
-      static std::string description();
+      CalibratorRegression(const Variable& iVariable, const Options& iOptions);
+      static std::string description(bool full=true);
       std::string name() const {return "regression";};
-      //! Create parameters based on training data
-      Parameters train(const TrainingData& iData, int iOffset) const;
+      Parameters train(const std::vector<ObsEns>& iData) const;
    private:
       bool calibrateCore(File& iFile, const ParameterFile* iParameterFile) const;
-      Variable::Type mVariable;
       int mOrder;
       bool mIntercept;
+      std::vector<std::string> mVariables;
 };
 #endif

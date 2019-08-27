@@ -21,8 +21,8 @@ namespace {
          void setLatLon(FileFake& iFile, const float iLat[], const float iLon[]) {
             vec2 lat;
             vec2 lon;
-            int nLat = iFile.getNumLat(); 
-            int nLon = iFile.getNumLon();
+            int nLat = iFile.getNumY();
+            int nLon = iFile.getNumX();
             lat.resize(nLat);
             lon.resize(nLat);
             for(int i = 0; i < nLat; i++) {
@@ -37,36 +37,48 @@ namespace {
             iFile.setLons(lon);
          };
       protected:
+         TestDownscalerNearestNeighbour() {
+         }
+         virtual ~TestDownscalerNearestNeighbour() {
+         }
+         virtual void SetUp() {
+            mVariable = Variable("air_temperature_2m");
+         }
+         virtual void TearDown() {
+         }
+         Variable mVariable;
    };
 
    TEST_F(TestDownscalerNearestNeighbour, description) {
       DownscalerNearestNeighbour::description();
    }
    TEST_F(TestDownscalerNearestNeighbour, downscale) {
-      DownscalerNearestNeighbour d(Variable::T, Options());
-      FileFake from(3,2,1,1);
-      FileFake to(2,2,1,1);
+      DownscalerNearestNeighbour d(mVariable, mVariable, Options());
+      FileFake from(Options("nLat=3 nLon=2 nEns=1 nTime=1"));
+      FileFake to(Options("nLat=2 nLon=2 nEns=1 nTime=1"));
       setLatLon(from, (const float[]) {60,50,55}, (const float[]){5,4});
       setLatLon(to,   (const float[]) {56,49},    (const float[]){3,4.6});
       d.downscale(from, to);
-      const Field& fromT = *from.getField(Variable::T, 0);
-      const Field& toT   = *to.getField(Variable::T, 0);
+      const Field& fromT = *from.getField(mVariable, 0);
+      const Field& toT   = *to.getField(mVariable, 0);
       EXPECT_FLOAT_EQ(fromT(2,1,0), toT(0,0,0));
       EXPECT_FLOAT_EQ(fromT(2,0,0), toT(0,1,0));
       EXPECT_FLOAT_EQ(fromT(1,1,0), toT(1,0,0));
       EXPECT_FLOAT_EQ(fromT(1,0,0), toT(1,1,0));
    }
    TEST_F(TestDownscalerNearestNeighbour, 10x10) {
-      DownscalerNearestNeighbour d(Variable::T, Options());
-      FileArome from("testing/files/10x10.nc");
-      const Field& fromT  = *from.getField(Variable::T, 0);
-      FileFake to(2,2,1,from.getNumTime());
+      DownscalerNearestNeighbour d(mVariable, mVariable, Options());
+      FileNetcdf from("testing/files/10x10.nc");
+      const Field& fromT  = *from.getField(mVariable, 0);
+      std::stringstream ss;
+      ss << "nLat=2 nLon=2 nEns=1 nTime=" << from.getNumTime();
+      FileFake to(Options(ss.str()));
       setLatLon(to, (const float[]) {5,11}, (const float[]){2,3});
       bool status = d.downscale(from, to);
       EXPECT_TRUE(status);
-      const Field& toT   = *to.getField(Variable::T, 0);
-      ASSERT_EQ(2, toT.getNumLat());
-      ASSERT_EQ(2, toT.getNumLon());
+      const Field& toT   = *to.getField(mVariable, 0);
+      ASSERT_EQ(2, toT.getNumY());
+      ASSERT_EQ(2, toT.getNumX());
       EXPECT_FLOAT_EQ(301, toT(0,0,0));
       EXPECT_FLOAT_EQ(302, toT(0,1,0));
       EXPECT_FLOAT_EQ(309, toT(1,0,0));

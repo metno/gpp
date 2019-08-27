@@ -1,0 +1,4 @@
+# offset lat   lon   elev  ens1  ens2  ens3
+0        5     3.2   20    4     4     4
+0        5     3.2   20    6     5     4
+0        5     3.2   20    9     8     10

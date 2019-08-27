@@ -7,93 +7,141 @@
 #include <fstream>
 #include <algorithm>
 
-ParameterFileText::ParameterFileText(const Options& iOptions) : ParameterFile(iOptions),
-      mIsSpatial(false) {
+ParameterFileText::ParameterFileText(const Options& iOptions, bool iIsNew) : ParameterFile(iOptions, iIsNew) {
+   if(iIsNew)
+      return;
    std::ifstream ifs(getFilename().c_str(), std::ifstream::in);
-   iOptions.getValue("spatial", mIsSpatial);
    if(!ifs.good()) {
       return;
    }
-   mNumParameters = Util::MV;
+   int numParameters = Util::MV;
    int counter = 0;
    std::set<int> times;
+   std::string header;
+   std::vector<std::string> columnNames;
+   int timePos = Util::MV;
+   int latPos = Util::MV;
+   int lonPos = Util::MV;
+   int elevPos = Util::MV;
    while(ifs.good()) {
       char line[10000];
       ifs.getline(line, 10000, '\n');
       if(ifs.good() && line[0] != '#') {
-         std::stringstream ss(line);
-         // Loop over each value
-         std::vector<float> values;
-         int time;
-         bool status = ss >> time;
-         if(!status) {
-            Util::error("Could not read time from file '" + mFilename + "'");
+         header = std::string(line);
+         std::stringstream ss(header);
+         if(columnNames.size() == 0) {
+            int currCounter = 0;
+            while(ss.good()) {
+               std::string value;
+               bool status = ss >> value;
+               if(!status) {
+                  std::stringstream ss;
+                  ss << "Could not read header '" << header << "' from file '" + mFilename + "'";
+                  Util::error(ss.str());
+               }
+               columnNames.push_back(value);
+               if(value == "time")
+                  timePos = currCounter;
+               else if(value == "lat")
+                  latPos = currCounter;
+               else if(value == "lon")
+                  lonPos = currCounter;
+               else if(value == "elev")
+                  elevPos = currCounter;
+               currCounter++;
+            }
+            int numSpatialVariables = Util::isValid(latPos) + Util::isValid(lonPos) + Util::isValid(elevPos);
+            if(numSpatialVariables > 0 && numSpatialVariables < 3) {
+               std::stringstream ss;
+               ss << "Partial spatial definitions found. Only " << numSpatialVariables << " out of lat, lon, elev columns are found";
+               Util::error(ss.str());
+            }
          }
-         times.insert(time);
-
-         Location location(Util::MV, Util::MV, Util::MV);
-         if(mIsSpatial) {
-            float lat;
-            status = ss >> lat;
-            if(!status) {
-               Util::error("Could not read lat from file '" + mFilename + "'");
+         else {
+            // Loop over each value
+            std::vector<float> values;
+            int currCounter = 0;
+            int time = 0;
+            float lat = Util::MV;
+            float lon = Util::MV;
+            float elev = Util::MV;
+            while(ss.good()) {
+               if(currCounter == timePos) {
+                  bool status = ss >> time;
+                  if(!status) {
+                     Util::error("Could not read time from file '" + mFilename + "'");
+                  }
+               }
+               else if(currCounter == latPos) {
+                  bool status = ss >> lat;
+                  if(!status) {
+                     Util::error("Could not read lat from file '" + mFilename + "'");
+                  }
+               }
+               else if(currCounter == lonPos) {
+                  bool status = ss >> lon;
+                  if(!status) {
+                     Util::error("Could not read lon from file '" + mFilename + "'");
+                  }
+               }
+               else if(currCounter == elevPos) {
+                  bool status = ss >> elev;
+                  if(!status) {
+                     Util::error("Could not read elev from file '" + mFilename + "'");
+                  }
+               }
+               else {
+                  float value;
+                  bool status  = ss >> value;
+                  if(!status) {
+                     Util::error("Could not read value from file '" + mFilename + "'");
+                  }
+                  values.push_back(value);
+               }
+               currCounter++;
+            }
+            times.insert(time);
+            Location location(Util::MV, Util::MV, Util::MV);
+            if(Util::isValid(lat) && Util::isValid(lon) && Util::isValid(elev)) {
+               location = Location(lat, lon, elev);
             }
 
-            float lon;
-            status = ss >> lon;
-            if(!status) {
-               Util::error("Could not read lon from file '" + mFilename + "'");
+            if(numParameters == Util::MV)
+               numParameters = values.size();
+            else if(values.size() != numParameters) {
+               std::stringstream ss;
+               ss << "Parameter file '" + getFilename() + "' is corrupt, because it does not have the same"
+                  << " number of columns on each line" << std::endl;
+               Util::error(ss.str());
             }
-
-            float elev;
-            status = ss >> elev;
-            if(!status) {
-               Util::error("Could not read elev from file '" + mFilename + "'");
-            }
-            location = Location(lat, lon, elev);
+            Parameters parameters(values);
+            setParameters(parameters, time, location);
+            counter++;
          }
-
-         while(ss.good()) {
-            float value;
-            bool status  = ss >> value;
-            if(!status) {
-               Util::error("Could not read value from file '" + mFilename + "'");
-            }
-            values.push_back(value);
-         }
-         if(mNumParameters == Util::MV)
-            mNumParameters = values.size();
-         else if(values.size() != mNumParameters) {
-            std::stringstream ss;
-            ss << "Parameter file '" + getFilename() + "' is corrupt, because it does not have the same"
-               << " number of columns on each line" << std::endl;
-            Util::error(ss.str());
-         }
-         Parameters parameters(values);
-         mParameters[location][time] = parameters;
-         counter++;
       }
    }
    ifs.close();
+
+   // Check header
+   if(counter == 0) {
+      std::stringstream ss;
+      ss << "No parameter sets found in '" << mFilename;
+      Util::error(ss.str());
+   }
+   if(counter > 1 && (!Util::isValid(timePos) && !Util::isValid(latPos))) {
+      std::stringstream ss;
+      ss << "'time' and/or 'lat'/'lon'/'elev' not found in header line (" << header << ") in '" << mFilename << "'. Is the file missing a header?";
+      Util::error(ss.str());
+   }
+
    mTimes = std::vector<int>(times.begin(), times.end());
    std::sort(mTimes.begin(), mTimes.end());
 
-   // Ensure all locations have parameters for all times
-   // Inserting empty parameter sets where there are none
-   std::map<Location, std::map<int, Parameters> >::iterator it;
-   for(it = mParameters.begin(); it != mParameters.end(); it++) {
-      std::map<int, Parameters>::const_iterator it2;
-      for(int t = 0; t < mTimes.size(); t++) {
-         if(it->second.find(t) == it->second.end()) {
-            it->second[t] = Parameters();
-         }
-      }
-   }
    std::stringstream ss;
    ss << "Reading " << mFilename << ". Found " << counter << " parameter sets.";
-   Util::status(ss.str());
-   if(!Util::isValid(mNumParameters))
-      mNumParameters = 0;
+   Util::info(ss.str());
+
+   recomputeTree();
 }
 
 std::vector<int> ParameterFileText::getTimes() const {
@@ -120,10 +168,6 @@ bool ParameterFileText::isReadable() const {
    return true;
 }
 
-int ParameterFileText::getNumParameters() const {
-   return mNumParameters;
-}
-
 void ParameterFileText::write() const {
    write(mFilename);
 }
@@ -134,22 +178,24 @@ void ParameterFileText::write(const std::string& iFilename) const {
       Util::error("Cannot write parameters to " + filename);
    }
 
-   std::map<Location, std::map<int, Parameters> >::const_iterator it;
+   std::map<Location, std::vector<Parameters> >::const_iterator it;
    // Loop over times
-   if(mIsSpatial)
-      ofs << "# time lat lon elev parameters" << std::endl;
+   if(isLocationDependent())
+      ofs << "time lat lon elev" << std::endl;
    else
-      ofs << "# time parameters" << std::endl;
+      ofs << "time" << std::endl;
+   for(int i = 0; i < getNumParameters(); i++) {
+      ofs << " param" << i;
+   }
    for(it = mParameters.begin(); it != mParameters.end(); it++) {
-      std::map<int, Parameters>::const_iterator it2;
       // Loop over locations
       const Location& location = it->first;
-      for(it2 = it->second.begin(); it2 != it->second.end(); it2++) {
-         int time = it2->first;
-         const Parameters& parameters = it2->second;
+      for(int i = 0; i < it->second.size(); i++) {
+         int time = i;
+         const Parameters& parameters = it->second[i];
          if(parameters.size() != 0) {
             ofs << time;
-            if(mIsSpatial) {
+            if(isLocationDependent()) {
                ofs << " " << location.lat() << " " << location.lon() << " " << location.elev();
             }
             // Loop over parameter values
@@ -164,23 +210,21 @@ void ParameterFileText::write(const std::string& iFilename) const {
 }
 
 bool ParameterFileText::isLocationDependent() const {
-   return mIsSpatial;
+   bool locationDependent = mParameters.size() > 1;
+   if(!locationDependent) {
+      Location location = mParameters.begin()->first;
+      if(Util::isValid(location.lat()) && Util::isValid(location.lon()))
+         locationDependent = true;
+   }
+   return locationDependent;
 }
 
-std::string ParameterFileText::description() {
+std::string ParameterFileText::description(bool full) {
    std::stringstream ss;
-   ss << Util::formatDescription("-p text", "Simple ascii text file with space separated entries. Each line represents one lead time, and each column one parameter.") << std::endl;
+   ss << Util::formatDescription("-p text", "Simple ascii text file with space separated entries. Each line represents one lead time and/or location, and each column one parameter. If lat/lon is missing, then parameters are assumed global. If time is missing, then the same parameters are used for all times.") << std::endl;
+   ss << Util::formatDescription("", "time lat lon elev param1 param2 ... paramN") << std::endl;
    ss << Util::formatDescription("", "offset1 a b ... N") << std::endl;
    ss << Util::formatDescription("", "...") << std::endl;
    ss << Util::formatDescription("", "offsetM a b ... N") << std::endl;
-   ss << Util::formatDescription("   file=required", "Filename of file.") << std::endl;
-   ss << Util::formatDescription("   spatial=0", "Does this file contain spatial information? If yes, then the each line represents a leadtime and location (order of lines is not important):") << std::endl;
-   ss << Util::formatDescription("", "offset1 lat1 lon1 elev1 a b ... N") << std::endl;
-   ss << Util::formatDescription("", "                ...") << std::endl;
-   ss << Util::formatDescription("", "offsetM lat1 lon1 elev1 a b ... N") << std::endl;
-   ss << Util::formatDescription("", "                ...") << std::endl;
-   ss << Util::formatDescription("", "offset1 latP lonP elevP a b ... N") << std::endl;
-   ss << Util::formatDescription("", "                ...") << std::endl;
-   ss << Util::formatDescription("", "offsetM latP lonP elevP a b ... N") << std::endl;
    return ss.str();
 }

@@ -3,6 +3,8 @@
 #include <iostream>
 #include <vector>
 #include <sstream>
+#include <set>
+#include "Util.h"
 
 
 //! Container class for key-value pairs.
@@ -51,10 +53,23 @@ class Options {
             if(key == iKey) {
                std::stringstream ss(value);
                ss >> iValue;
+               mHasBeenAccessed.insert(iKey);
                return true;
             }
          }
          return false;
+      };
+
+      //! \brief Find value corresponding to key, throw error if not found
+      //! @param iKey find this key
+      //! @param iValue places the value in this variable. If key does not exist, this is unchanged.
+      template <class T> void getRequiredValue(std::string iKey, T& iValue) const {
+         bool status = getValue(iKey, iValue);
+         if(!status) {
+            std::stringstream ss;
+            ss << "Required key '" << iKey << "' missing in: " << toString();
+            Util::error(ss.str());
+         }
       };
 
       //! \brief Find vector values corresponding to key
@@ -81,16 +96,36 @@ class Options {
                   ss2 >> value;
                   iValues.push_back(value);
                }
+               mHasBeenAccessed.insert(iKey);
                return true;
             }
          }
          return false;
       };
+
+     template <class T> void getRequiredValues(const std::string& iKey, std::vector<T>& iValues) const {
+        bool status = getValues(iKey, iValues);
+        if(!status) {
+           std::stringstream ss;
+           ss << "Required key '" << iKey << "' missing in: " << toString();
+           Util::error(ss.str());
+        }
+     };
+
+      //! Check that a value is present for the key
+      bool hasValue(const std::string& iKey) const;
+
+      //! Returns true if all keys have been accessed. Useful when checking if a key in the options
+      //! was not recognized by a scheme.
+      bool check() const;
+      bool operator==(const Options &right) const;
+      bool operator!=(const Options &right) const;
    private:
       //! Parse a string with a single option "key=value"
       void addOption(std::string iOptionString);
 
       typedef std::pair<std::string,std::string> KeyValue;  // key, value
       std::vector<KeyValue> mPairs;
+      mutable std::set<std::string> mHasBeenAccessed;
 };
 #endif

@@ -6,6 +6,9 @@
 #include <cmath>
 #include <math.h>
 #include <assert.h>
+namespace Cglob {
+#include <glob.h>
+}
 #include <boost/date_time/gregorian/gregorian_types.hpp>
 #include <boost/date_time/date_duration.hpp>
 #include <boost/date_time/posix_time/ptime.hpp>
@@ -15,23 +18,27 @@
 #include <fstream>
 #include <istream>
 #include <iomanip>
+#include <cstdio>
 
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>
 #include <boost/numeric/ublas/triangular.hpp>
 #include <boost/numeric/ublas/lu.hpp>
 #include <boost/numeric/ublas/io.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
 #ifdef DEBUG
 extern "C" void __gcov_flush();
 #endif
 bool Util::mShowError = true;
 bool Util::mShowWarning = false;
 bool Util::mShowStatus = false;
+bool Util::mShowInfo = false;
 float Util::MV = -999;
 float Util::pi  = 3.14159265;
 double Util::radiusEarth = 6.378137e6;
 
 void Util::error(std::string iMessage) {
+#ifdef DEBUG
    if(mShowError) {
       std::cout << "Error: " << iMessage << std::endl;
       void *array[10];
@@ -39,8 +46,11 @@ void Util::error(std::string iMessage) {
       std::cout << "Stack trace:" << std::endl;
       backtrace_symbols_fd(array, size, 2);
    }
-#ifdef DEBUG
    __gcov_flush();
+#else
+   if(mShowError) {
+      std::cout << "Error: " << iMessage << std::endl;
+   }
 #endif
    abort();
 }
@@ -48,9 +58,21 @@ void Util::warning(std::string iMessage) {
    if(mShowWarning)
       std::cout << "Warning: " << iMessage << std::endl;
 }
-void Util::status(std::string iMessage) {
-   if(mShowStatus)
-      std::cout << "Status: " << iMessage << std::endl;
+void Util::status(std::string iMessage, bool iNewLine) {
+   if(mShowStatus) {
+      std::cout << "" << iMessage;
+      if(iNewLine) {
+         std::cout << std::endl;
+      }
+      else {
+         std::fflush(stdout);
+      }
+   }
+}
+
+void Util::info(std::string iMessage) {
+   if(mShowInfo)
+      std::cout << "Info: " << iMessage << std::endl;
 }
 
 double Util::clock() {
@@ -73,8 +95,8 @@ void Util::setShowStatus(bool flag) {
    mShowStatus = flag;
 }
 
-bool Util::isValid(float iValue) {
-   return !std::isnan(iValue) && !std::isinf(iValue) && iValue != Util::MV;
+void Util::setShowInfo(bool flag) {
+   mShowInfo = flag;
 }
 
 bool Util::exists(const std::string& iFilename) {
@@ -87,7 +109,11 @@ float Util::getDistance(float lat1, float lon1, float lat2, float lon2, bool app
       !Util::isValid(lon1) || !Util::isValid(lon2)) {
       return Util::MV;
    }
-   assert(fabs(lat1) <= 90 && fabs(lat2) <= 90 && fabs(lon1) <= 360 && fabs(lon2) <= 360);
+   if(!(fabs(lat1) <= 90 && fabs(lat2) <= 90 && fabs(lon1) <= 360 && fabs(lon2) <= 360)) {
+      std::stringstream ss;
+      ss  <<" Cannot calculate distance, invalid lat/lon: (" << lat1 << "," << lon1 << ") (" << lat2 << "," << lon2 << ")";
+      Util::error(ss.str());
+   }
 
    if(lat1 == lat2 && lon1 == lon2)
       return 0;
@@ -117,6 +143,21 @@ float Util::deg2rad(float deg) {
 float Util::rad2deg(float rad) {
    return (rad * 180 / Util::pi);
 }
+std::vector<std::string> Util::glob(std::string iFilenames) {
+   // Split on commas
+   std::vector<std::string> returnFiles;
+   std::vector<std::string> files = Util::split(iFilenames, ",");
+   for(int k = 0; k < files.size(); k++) {
+      int flags = GLOB_TILDE | GLOB_NOMAGIC;
+      Cglob::glob_t results;
+      Cglob::glob(files[k].c_str(), flags, NULL, &results);
+      for(int i = 0; i < results.gl_pathc; i++) {
+         returnFiles.push_back(results.gl_pathv[i]);
+      }
+   }
+   return returnFiles;
+}
+
 std::string Util::gridppVersion() {
    return GRIDPP_VERSION;
 }
@@ -195,13 +236,26 @@ int Util::calcDate(int iDate, float iAddHours) {
    return returnDate;
 }
 
-std::vector<std::string> Util::split(std::string iString) {
+std::vector<std::string> Util::split(std::string iString, std::string iDelims) {
    std::vector<std::string> strings;
-   std::stringstream ss(iString);
-   std::string currString;
-   while(ss >> currString) {
-      strings.push_back(currString);
+
+   // Skip delimiters at beginning.
+   std::string::size_type lastPos = iString.find_first_not_of(iDelims, 0);
+
+   // Find first non-delimiter.
+   std::string::size_type pos = iString.find_first_of(iDelims, lastPos);
+
+   while(std::string::npos != pos || std::string::npos != lastPos) {
+      // Found a string
+      strings.push_back(iString.substr(lastPos, pos - lastPos));
+
+      // Skip delimiters
+      lastPos = iString.find_first_not_of(iDelims, pos);
+
+      // Find next non-delimiter.
+      pos = iString.find_first_of(iDelims, lastPos);
    }
+
    return strings;
 }
 float Util::logit(float p) {
@@ -230,6 +284,11 @@ bool Util::copy(std::string iFrom, std::string iTo) {
    source.close();
    dest.close();
    return true;
+}
+
+bool Util::remove(std::string iFilename) {
+   bool failure = std::remove(iFilename.c_str());
+   return !failure;
 }
 
 std::string Util::formatDescription(std::string iTitle, std::string iMessage, int iTitleLength, int iMaxLength, int iTitleIndent) {
@@ -280,7 +339,7 @@ std::string Util::formatDescription(std::string iTitle, std::string iMessage, in
 float Util::calculateStat(const std::vector<float>& iArray, Util::StatType iStatType, float iQuantile) {
    // Initialize to missing
    float value = Util::MV;
-   if(iStatType == Util::StatTypeMean) {
+   if(iStatType == Util::StatTypeMean || iStatType == Util::StatTypeSum) {
       float total = 0;
       int count = 0;
       for(int n = 0; n < iArray.size(); n++) {
@@ -290,7 +349,10 @@ float Util::calculateStat(const std::vector<float>& iArray, Util::StatType iStat
          }
       }
       if(count > 0) {
-         value = total / count;
+         if(iStatType == Util::StatTypeMean)
+            value = total / count;
+         else
+            value = total;
       }
    }
    else if(iStatType == Util::StatTypeStd) {
@@ -326,7 +388,13 @@ float Util::calculateStat(const std::vector<float>& iArray, Util::StatType iStat
          value = std;
       }
    }
-   else if(iStatType == Util::StatTypeQuantile) {
+   else {
+      if(iStatType == Util::StatTypeMin)
+         iQuantile = 0;
+      if(iStatType == Util::StatTypeMedian)
+         iQuantile = 0.5;
+      if(iStatType == Util::StatTypeMax)
+         iQuantile = 1;
       // Remove missing
       std::vector<float> cleanHood;
       cleanHood.reserve(iArray.size());
@@ -357,6 +425,33 @@ float Util::calculateStat(const std::vector<float>& iArray, Util::StatType iStat
       }
    }
    return value;
+}
+bool Util::getStatType(std::string iName, Util::StatType& iType) {
+   if(iName == "mean") {
+      iType = Util::StatTypeMean;
+   }
+   else if(iName == "min") {
+      iType = Util::StatTypeMin;
+   }
+   else if(iName == "max") {
+      iType = Util::StatTypeMax;
+   }
+   else if(iName == "median") {
+      iType = Util::StatTypeMedian;
+   }
+   else if(iName == "quantile") {
+      iType = Util::StatTypeQuantile;
+   }
+   else if(iName == "std") {
+      iType = Util::StatTypeStd;
+   }
+   else if(iName == "sum") {
+      iType = Util::StatTypeSum;
+   }
+   else {
+      return false;
+   }
+   return true;
 }
 
 vec2 Util::inverse(const vec2 iMatrix) {
@@ -453,6 +548,94 @@ float Util::interpolate(float x, const std::vector<float>& iX, const std::vector
 
    return y;
 
+}
+
+std::vector<float> Util::regression(const std::vector<float>& iPredictand, const std::vector<std::vector<float> >& iPredictors, bool iAddConst) {
+   int N = iPredictors.size() + iAddConst; // Number of predictors
+   int T = iPredictand.size();
+
+   if(T < 2) {
+      Util::error("Cannot do regression with only one data point");
+   }
+   // Check that we have the right number of rows
+   for(int i = 0; i < iPredictors.size(); i++) {
+      if(iPredictors[i].size() != T) {
+         Util::error("One (or more) of the predictors does not have the same number of items as the predictand");
+      }
+   }
+
+   boost::numeric::ublas::matrix<double> A(T,N);
+   boost::numeric::ublas::matrix<double> y(T,1);
+   for(int t = 0; t < T; t++) {
+      for(int n = 0; n < N; n++) {
+         if(iAddConst) {
+            if(n == 0)
+               A(t, n) = 1;
+            else
+               A(t, n) = iPredictors[n-1][t];
+         }
+         else {
+            A(t,n) = iPredictors[n][t];
+         }
+         y(t,0) = iPredictand[t];
+      }
+   }
+
+#if 0
+   std::cout << "\nX" << std::endl;
+   for(int i = 0; i < A.size1(); i++) {
+      for(int j = 0; j < A.size2(); j++) {
+         std::cout << A(i,j) << " ";
+      }
+      std::cout << std::endl;
+   }
+#endif
+
+   using namespace boost::numeric::ublas;
+   matrix<double> solution(T,1);
+   matrix<double> XTX(T,T);
+   matrix<double> XT = trans(A);
+   XTX = prod(XT, A);
+
+# if 0
+   std::cout << "\nXTX" << std::endl;
+   for(int i = 0; i < XTX.size1(); i++) {
+      for(int j = 0; j < XTX.size2(); j++) {
+         std::cout << XTX(i,j) << " ";
+      }
+      std::cout << std::endl;
+   }
+#endif
+   matrix<double> XTXinv(N,N);
+   XTXinv.assign(identity_matrix<double>(N)); 
+
+   typedef permutation_matrix<std::size_t> pmatrix; 
+   pmatrix pm(XTX.size1());
+   int res = lu_factorize(XTX,pm);
+   assert(res == 0);
+
+#if 0
+   std::cout << "\npm" << std::endl;
+   for(int i = 0; i < XTX.size1(); i++) {
+      std::cout << pm(i) << " ";
+   }
+   std::cout << std::endl;
+#endif
+
+   lu_substitute(XTX, pm, XTXinv);
+   matrix<double> XTXinvXTy(N,N);
+   matrix<double> XTXinvXT = prod(XTXinv,XT);
+   solution = prod(XTXinvXT, y);
+
+   //boost::numeric::ublas::identity_matrix<float> Ainv(A.size1());
+   //boost::numeric::ublas::permutation_matrix<size_t> pm(A.size1());
+   //boost::numeric::ublas::lu_factorize(A, pm);
+   //boost::numeric::ublas::lu_substitute(A, pm, y);
+   std::vector<float> values(N, 0);
+   for(int n = 0; n < N; n++) {
+      values[n] = solution(n,0);
+   }
+   return values;
 }
 
 int Util::getLowerIndex(float iX, const std::vector<float>& iValues) {

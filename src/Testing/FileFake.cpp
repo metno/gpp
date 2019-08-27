@@ -8,7 +8,7 @@ namespace {
    };
 
    TEST_F(FileFakeTest, getLatLons) {
-      FileFake file(3,3,1,1);
+      FileFake file(Options("nLat=3 nLon=3 nEns=1 nTime=1"));
       vec2 lats = file.getLats();
       vec2 lons = file.getLons();
       ASSERT_EQ(3, lats.size());
@@ -17,7 +17,7 @@ namespace {
       ASSERT_EQ(3, lons[0].size());
    }
    TEST_F(FileFakeTest, setLatLons) {
-      FileFake file(3,3,1,1);
+      FileFake file(Options("nLat=3 nLon=3 nEns=1 nTime=1"));
       vec2 origLats = file.getLats();
       vec2 origLons = file.getLons();
       vec2 origElevs = file.getElevs();
@@ -53,7 +53,7 @@ namespace {
       }
    }
    TEST_F(FileFakeTest, setLatLonsInvalid) {
-      FileFake file(3,3,1,1);
+      FileFake file(Options("nLat=3 nLon=3 nEns=1 nTime=1"));
       vec2 origLats = file.getLats();
       vec2 origLons = file.getLons();
       vec2 origElevs = file.getElevs();
@@ -85,24 +85,24 @@ namespace {
       }
    }
    TEST_F(FileFakeTest, getDimensionSizes) {
-      FileFake file(4,2,5,3);
-      EXPECT_EQ(4, file.getNumLat());
-      EXPECT_EQ(2, file.getNumLon());
+      FileFake file(Options("nLat=4 nLon=2 nEns=5 nTime=3"));
+      EXPECT_EQ(4, file.getNumY());
+      EXPECT_EQ(2, file.getNumX());
       EXPECT_EQ(5, file.getNumEns());
       EXPECT_EQ(3, file.getNumTime());
    }
    TEST_F(FileFakeTest, invalid) {
       ::testing::FLAGS_gtest_death_test_style = "threadsafe";
       Util::setShowError(false);
-      EXPECT_DEATH(FileFake file(0,1,2,3), ".*");
-      EXPECT_DEATH(FileFake file(1,0,2,3), ".*");
-      EXPECT_DEATH(FileFake file(1,1,0,3), ".*");
-      EXPECT_DEATH(FileFake file(1,1,1,0), ".*");
-      EXPECT_DEATH(FileFake file(Util::MV,1,1,1), ".*");
-      EXPECT_DEATH(FileFake file(1, Util::MV,1,1), ".*");
-      EXPECT_DEATH(FileFake file(1, 1, Util::MV,1), ".*");
-      EXPECT_DEATH(FileFake file(1, 1, 1, Util::MV), ".*");
-      EXPECT_DEATH(FileFake file(1, 0, 1, Util::MV), ".*");
+      EXPECT_DEATH(FileFake file(Options("nLat=0 nLon=1 nEns=2 nTime=3")), ".*");
+      EXPECT_DEATH(FileFake file(Options("nLat=1 nLon=0 nEns=2 nTime=3")), ".*");
+      EXPECT_DEATH(FileFake file(Options("nLat=1 nLon=1 nEns=0 nTime=3")), ".*");
+      EXPECT_DEATH(FileFake file(Options("nLat=1 nLon=1 nEns=1 nTime=0")), ".*");
+      EXPECT_DEATH(FileFake file(Options("nLat=-999 nLon=1 nEns=1 nTime=1")), ".*");
+      EXPECT_DEATH(FileFake file(Options("nLat=1 nLon=-999 nEns=1 nTime=1")), ".*");
+      EXPECT_DEATH(FileFake file(Options("nLat=1 nLon=1 nEns=-999 nTime=1")), ".*");
+      EXPECT_DEATH(FileFake file(Options("nLat=1 nLon=1 nEns=1 nTime=-999")), ".*");
+      EXPECT_DEATH(FileFake file(Options("nLat=1 nLon=0 nEns=1 nTime=-999")), ".*");
    }
 }
 int main(int argc, char **argv) {

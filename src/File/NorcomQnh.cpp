@@ -7,44 +7,58 @@
 #include <iomanip>
 
 FileNorcomQnh::FileNorcomQnh(std::string iFilename, const Options& iOptions) :
-      File(iFilename) {
-   mLats.resize(1);
-   mLons.resize(1);
-   mElevs.resize(1);
+      File(iFilename, iOptions) {
+   vec2 lats, lons;
+   lats.resize(1);
+   lons.resize(1);
+   vec2 elevs;
+   elevs.resize(1);
    mLandFractions.resize(1);
-   if(!iOptions.getValues("lats", mLats[0])) {
+   mNEns = 1;
+   if(!iOptions.getValues("lats", lats[0])) {
       Util::error("Missing 'lats' option for '" + iFilename + "'");
    }
-   if(!iOptions.getValues("lons", mLons[0])) {
+   if(!iOptions.getValues("lons", lons[0])) {
       Util::error("Missing 'lons' option for '" + iFilename + "'");
    }
-   if(!iOptions.getValues("elevs", mElevs[0])) {
+   if(!iOptions.getValues("elevs", elevs[0])) {
       Util::error("Missing 'elevs' option for '" + iFilename + "'");
    }
-   mLandFractions[0].resize(mElevs[0].size(), Util::MV);
+   mLandFractions[0].resize(elevs[0].size(), Util::MV);
    if(!iOptions.getValues("names", mNames)) {
       Util::error("Missing 'names' option for '" + iFilename + "'");
    }
-   if(!iOptions.getValue("numTimes", mNTime)) {
+   int numTimes = Util::MV;
+   if(!iOptions.getValue("numTimes", numTimes)) {
       Util::error("Missing 'numTimes' option for '" + iFilename + "'");
    }
-   if(mLats[0].size() != mLons[0].size() || mLats[0].size() != mElevs[0].size() || mLats[0].size() != mNames.size()) {
+   if(lats[0].size() != lons[0].size() || lats[0].size() != elevs[0].size() || lats[0].size() != mNames.size()) {
       Util::error("FileNorcomQnh: 'lats', 'lons', 'elevs', 'names' must be the same size");
    }
-   for(int i = 0; i < mLats[0].size(); i++) {
-      float lat = mLats[0][i];
+   for(int i = 0; i < lats[0].size(); i++) {
+      float lat = lats[0][i];
       if(lat < -90 || lat > 90) {
          std::stringstream ss;
          ss << "Invalid latitude: " << lat;
          Util::error(ss.str());
       }
    }
-   mNLat = 1;
-   mNLon = mLats[0].size();
-   mNEns = 1;
+   bool successLats = setLats(lats);
+   if(!successLats) {
+      std::stringstream ss;
+      ss << "Could not set latitudes in " << getFilename();
+      Util::error(ss.str());
+   }
+   bool successLons = setLons(lons);
+   if(!successLons) {
+      std::stringstream ss;
+      ss << "Could not set longitudes in " << getFilename();
+      Util::error(ss.str());
+   }
+   setElevs(elevs);
 
    std::vector<double> times;
-   for(int i = 0; i < mNTime; i++)
+   for(int i = 0; i < numTimes; i++)
       times.push_back(i);
 
    // Determine the times for this filetype.
@@ -63,22 +77,22 @@ FileNorcomQnh::FileNorcomQnh(std::string iFilename, const Options& iOptions) :
 FileNorcomQnh::~FileNorcomQnh() {
 }
 
-FieldPtr FileNorcomQnh::getFieldCore(Variable::Type iVariable, int iTime) const {
+FieldPtr FileNorcomQnh::getFieldCore(const Variable& iVariable, int iTime) const {
    FieldPtr field = getEmptyField();
    return field;
 }
 
-void FileNorcomQnh::writeCore(std::vector<Variable::Type> iVariables) {
+void FileNorcomQnh::writeCore(std::vector<Variable> iVariables, std::string iMessage) {
    std::ofstream ofs(getFilename().c_str());
    if(iVariables.size() == 0) {
       Util::warning("No variables to write");
       return;
    }
-   Variable::Type variable = iVariables[0];
+   Variable variable = iVariables[0];
    if(iVariables.size() > 1) {
       std::stringstream ss;
       ss <<"Output NorcomQnh can only write one variables, several given. Will write variable ";
-      ss << Variable::getTypeName(variable);
+      ss << variable.name();
       Util::warning(ss.str());
    }
 
@@ -95,12 +109,13 @@ void FileNorcomQnh::writeCore(std::vector<Variable::Type> iVariables) {
    std::vector<double> times = getTimes();
    std::string startTime = getNorcomTimeStamp(times[mStartTime]);
    std::string endTime   = getNorcomTimeStamp(times[mEndTime]);
-   ofs << "FBNO52 ENNC " << currTimeStamp << std::endl;
-   ofs << "VALID " << startTime << " - " << endTime << " UTC." << std::endl;
+   ofs << "FBNO52 ENNC " << currTimeStamp << "\r\r" << std::endl;
+   ofs << "VALID " << startTime << " - " << endTime << " UTC." << "\r" << std::endl;
 
    ofs.precision(0);
    // Write one line for each station
-   for(int j = 0; j < mLats[0].size(); j++) {
+   vec2 lats = getLats();
+   for(int j = 0; j < lats[0].size(); j++) {
       std::string locationName = mNames[j];
       ofs << "EST MIN QNH ";
       ofs << std::setfill(' ') << std::setw(maxNameSize) << std::left << locationName << ": ";
@@ -117,7 +132,7 @@ void FileNorcomQnh::writeCore(std::vector<Variable::Type> iVariables) {
          Util::error("Invalid value when writing QNH to NorcomQnh");
       }
       int valueHpa = valuePa / 100;
-      ofs << std::setfill('0') << std::setw(4) << std::right << valueHpa << " HPA" << std::endl;
+      ofs << std::setfill('0') << std::setw(4) << std::right << valueHpa << " HPA" << "\r" << std::endl;
    }
    ofs.close();
 }
@@ -126,7 +141,7 @@ std::string FileNorcomQnh::getNorcomTimeStamp(time_t iUnixTime) const {
    int date = Util::getDate(iUnixTime);
    int time = Util::getTime(iUnixTime);
    std::stringstream ss;
-   int day = date % 100; 
+   int day = date % 100;
    int HHMM = time / 100;
    ss << std::setfill('0') << std::right << std::setw(2) << day;
    ss << std::setfill('0') << std::right << std::setw(4) << HHMM;

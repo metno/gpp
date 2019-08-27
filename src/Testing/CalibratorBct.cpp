@@ -19,13 +19,15 @@ namespace {
          }
          virtual void TearDown() {
          }
+         Variable mVariable = Variable("precipitation_amount");
+
          void test(CalibratorBct& cal, File& file, ParameterFile& parFile, float i0, float i1, float i2, float e0, float e1, float e2) {
-            FieldPtr field  = file.getField(Variable::Precip, 0);
+            FieldPtr field  = file.getField(mVariable, 0);
             (*field)(0,0,0) = i0;
             (*field)(0,0,1) = i1;
             (*field)(0,0,2) = i2;
             cal.calibrate(file, &parFile);
-            const FieldPtr after  = file.getField(Variable::Precip, 0);
+            const FieldPtr after  = file.getField(mVariable, 0);
 
             EXPECT_FLOAT_EQ(e0, (*after)(0,0,0));
             EXPECT_FLOAT_EQ(e1, (*after)(0,0,1));
@@ -47,7 +49,7 @@ namespace {
             return parFile;
          }
          CalibratorBct getCalibrator(const Options& iOptions=Options("")) {
-            return CalibratorBct(Variable::W, iOptions);
+            return CalibratorBct(mVariable, iOptions);
          }
    };
 

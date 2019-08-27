@@ -6,7 +6,7 @@
 #include "../Util.h"
 
 FilePoint::FilePoint(std::string iFilename, const Options& iOptions) :
-      File(iFilename) {
+      File(iFilename, iOptions) {
    float lat,lon,elev;
    if(!iOptions.getValue("lat", lat)) {
       Util::error("Missing 'lat' option for '" + iFilename + "'");
@@ -26,15 +26,27 @@ FilePoint::FilePoint(std::string iFilename, const Options& iOptions) :
    std::vector<float> lon0(1, lon);
    std::vector<float> elev0(1, elev);
    std::vector<float> landFraction0(1, Util::MV);
-   mLats.push_back(lat0);
-   mLons.push_back(lon0);
-   mElevs.push_back(elev0);
+   vec2 lats, lons;
+   lats.push_back(lat0);
+   lons.push_back(lon0);
+   bool successLats = setLats(lats);
+   if(!successLats) {
+      std::stringstream ss;
+      ss << "Could not set latitudes in " << getFilename();
+      Util::error(ss.str());
+   }
+   bool successLons = setLons(lons);
+   if(!successLons) {
+      std::stringstream ss;
+      ss << "Could not set longitudes in " << getFilename();
+      Util::error(ss.str());
+   }
+   vec2 elevs;
+   elevs.push_back(elev0);
+   setElevs(elevs);
    mLandFractions.push_back(landFraction0);
-   mNLat = 1;
-   mNLon = 1;
    mNEns = 1;
    std::vector<double> times;
-   mNTime = Util::MV;
    mNEns = Util::MV;
 
    // Determine time and ensemble dimension if possible
@@ -54,21 +66,21 @@ FilePoint::FilePoint(std::string iFilename, const Options& iOptions) :
                mNEns++;
             }
          }
-         mNTime = times.size();
       }
    }
 
    // Otherwise get the time or ensemble dimension from options
    iOptions.getValue("ens", mNEns);
-   if(iOptions.getValue("time", mNTime)) {
+   int numTimes;
+   if(iOptions.getValue("time", numTimes)) {
       times.clear();
       // Empty file, probably used as output only
-      for(int i = 0; i < mNTime; i++)
+      for(int i = 0; i < numTimes; i++)
          times.push_back(i);
    }
 
    // Check that we got time and ensemble dimension
-   if(!Util::isValid(mNTime)) {
+   if(!Util::isValid(numTimes)) {
       Util::error("Missing 'time' option for empty file '" + iFilename + "'");
    }
    if(!Util::isValid(mNEns)) {
@@ -80,7 +92,7 @@ FilePoint::FilePoint(std::string iFilename, const Options& iOptions) :
 FilePoint::~FilePoint() {
 }
 
-FieldPtr FilePoint::getFieldCore(Variable::Type iVariable, int iTime) const {
+FieldPtr FilePoint::getFieldCore(const Variable& iVariable, int iTime) const {
    std::ifstream ifs(getFilename().c_str());
    FieldPtr field = getEmptyField();
 
@@ -119,9 +131,8 @@ FieldPtr FilePoint::getFieldCore(Variable::Type iVariable, int iTime) const {
    return field;
 }
 
-void FilePoint::writeCore(std::vector<Variable::Type> iVariables) {
+void FilePoint::writeCore(std::vector<Variable> iVariables, std::string iMessage) {
    std::ofstream ofs(getFilename().c_str());
-   // ofs << mLats[0][0] << " " << mLons[0][0] << " " << mElevs[0][0];
    if(iVariables.size() == 0) {
       Util::warning("No variables to write");
       return;

@@ -4,13 +4,14 @@
 #include <math.h>
 const float DownscalerPressure::mConstant = -1.21e-4;
 
-DownscalerPressure::DownscalerPressure(Variable::Type iVariable, const Options& iOptions) :
-      Downscaler(iVariable, iOptions) {
+DownscalerPressure::DownscalerPressure(const Variable& iInputVariable, const Variable& iOutputVariable, const Options& iOptions) :
+      Downscaler(iInputVariable, iOutputVariable, iOptions) {
+   iOptions.check();
 }
 
 void DownscalerPressure::downscaleCore(const File& iInput, File& iOutput) const {
-   int nLat = iOutput.getNumLat();
-   int nLon = iOutput.getNumLon();
+   int nLat = iOutput.getNumY();
+   int nLon = iOutput.getNumX();
    int nEns = iOutput.getNumEns();
    int nTime = iInput.getNumTime();
 
@@ -26,8 +27,8 @@ void DownscalerPressure::downscaleCore(const File& iInput, File& iOutput) const 
    getNearestNeighbour(iInput, iOutput, nearestI, nearestJ);
 
    for(int t = 0; t < nTime; t++) {
-      Field& ifield = *iInput.getField(mVariable, t);
-      Field& ofield = *iOutput.getField(mVariable, t);
+      Field& ifield = *iInput.getField(mInputVariable, t);
+      Field& ofield = *iOutput.getField(mOutputVariable, t, true);
 
       #pragma omp parallel for
       for(int i = 0; i < nLat; i++) {
@@ -53,9 +54,12 @@ void DownscalerPressure::downscaleCore(const File& iInput, File& iOutput) const 
       }
    }
 }
-std::string DownscalerPressure::description() {
+std::string DownscalerPressure::description(bool full) {
    std::stringstream ss;
-   ss << Util::formatDescription("-d pressure", "Adjusts the pressure of the nearest neighbour based on the elevation difference and a standard atmosphere.") << std::endl;
+   if(full)
+      ss << Util::formatDescription("-d pressure", "Adjusts the pressure of the nearest neighbour based on the elevation difference and a standard atmosphere.") << std::endl;
+   else
+      ss << Util::formatDescription("-d pressure", "Adjusts the pressure based on the elevation differences") << std::endl;
    return ss.str();
 }
 

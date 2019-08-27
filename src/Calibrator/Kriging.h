@@ -8,25 +8,24 @@ class Parameters;
 
 class CalibratorKriging : public Calibrator {
    public:
-      CalibratorKriging(Variable::Type iVariable, const Options& iOptions);
-      static std::string description();
+      CalibratorKriging(const Variable& iVariable, const Options& iOptions);
+      static std::string description(bool full=true);
       float calcCovar(const Location& loc1, const Location& loc2) const;
       enum Type {
          TypeCressman = 10,
          TypeBarnes   = 20
       };
       //! Compute the bias at the training point
-      Parameters train(const TrainingData& iData, int iOffset) const;
+      Parameters train(const std::vector<ObsEns>& iData) const;
    private:
       bool calibrateCore(File& iFile, const ParameterFile* iParameterFile) const;
 
-      Variable::Type mVariable;
       float mRadius;
       float mMaxElevDiff;
       float mEfoldDist;
       std::string name() const {return "kriging";};
       File* mPrevious;
-      Variable::Type mAuxVariable;
+      std::string mAuxVariable;
       float mLowerThreshold;
       float mUpperThreshold;
       Type mKrigingType;

@@ -23,9 +23,10 @@ namespace {
       ASSERT_EQ(1, file.getTimes().size());
       Parameters par = file.getParameters(0);
       ASSERT_EQ(0, par.size());
+      EXPECT_FALSE(file.isLocationDependent());
       std::vector<Location> locations;
       locations = file.getLocations();
-      EXPECT_EQ(1, locations.size());
+      EXPECT_EQ(0, locations.size());
    }
 
 }
