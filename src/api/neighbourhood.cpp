@@ -5,11 +5,11 @@
 using namespace gridpp;
 
 namespace {
-    vec2 neighbourhood_brute_force(const vec2& input, int iRadius, gridpp::Statistic statistic, float quantile);
-    vec2 neighbourhood_brute_force(const vec3& input, int iRadius, gridpp::Statistic statistic, float quantile);
+    vec2 neighbourhood_brute_force(const vec2& input, int halfwidth, gridpp::Statistic statistic, float quantile);
+    vec2 neighbourhood_brute_force(const vec3& input, int halfwidth, gridpp::Statistic statistic, float quantile);
     vec3 vec2_to_vec3(const vec2& input);
 }
-vec2 gridpp::neighbourhood(const vec3& input, int iRadius, gridpp::Statistic statistic) {
+vec2 gridpp::neighbourhood(const vec3& input, int halfwidth, gridpp::Statistic statistic) {
     vec2 flat(input.size());
     int Y = input.size();
     int X = input[0].size();
@@ -22,12 +22,12 @@ vec2 gridpp::neighbourhood(const vec3& input, int iRadius, gridpp::Statistic sta
             flat[y][x] = gridpp::calc_statistic(input[y][x], statistic);
         }
     }
-    vec2 results = neighbourhood(flat, iRadius, statistic);
+    vec2 results = neighbourhood(flat, halfwidth, statistic);
     return results;
 }
-vec2 gridpp::neighbourhood(const vec2& input, int iRadius, gridpp::Statistic statistic) {
-    if(iRadius < 0)
-        throw std::invalid_argument("Radius must be > 0");
+vec2 gridpp::neighbourhood(const vec2& input, int halfwidth, gridpp::Statistic statistic) {
+    if(halfwidth < 0)
+        throw std::invalid_argument("Half width must be > 0");
     if(statistic == gridpp::Quantile)
         throw std::invalid_argument("Use neighbourhood_quantile for computing neighbourhood quantiles");
     if(input.size() == 0 || input[0].size() == 0)
@@ -101,10 +101,10 @@ vec2 gridpp::neighbourhood(const vec2& input, int iRadius, gridpp::Statistic sta
         #pragma omp parallel for
         for(int i = 0; i < nY; i++) {
             for(int j = 0; j < nX; j++) {
-                int i1 = std::min(nY-1, i + iRadius);
-                int j1 = std::min(nX-1, j + iRadius);
-                int i0 = i - iRadius - 1;
-                int j0 = j - iRadius - 1;
+                int i1 = std::min(nY-1, i + halfwidth);
+                int j1 = std::min(nX-1, j + halfwidth);
+                int i0 = i - halfwidth - 1;
+                int j0 = j - halfwidth - 1;
                 double value11 = values[i1][j1];
                 double value00 = 0;
                 double value10 = 0;
@@ -149,19 +149,19 @@ vec2 gridpp::neighbourhood(const vec2& input, int iRadius, gridpp::Statistic sta
         }
         #pragma omp parallel for
         for(int i = 0; i < nY; i++) {
-            if(i < iRadius || i >= nY - iRadius) {
+            if(i < halfwidth || i >= nY - halfwidth) {
                 // Regular way
                 for(int j = 0; j < nX; j++) {
                     // Put neighbourhood into vector
                     std::vector<float> neighbourhood;
-                    int Ni = std::min(nY-1, i+iRadius) - std::max(0, i-iRadius) + 1;
-                    int Nj = std::min(nX-1, j+iRadius) - std::max(0, j-iRadius) + 1;
+                    int Ni = std::min(nY-1, i+halfwidth) - std::max(0, i-halfwidth) + 1;
+                    int Nj = std::min(nX-1, j+halfwidth) - std::max(0, j-halfwidth) + 1;
                     assert(Ni > 0);
                     assert(Nj > 0);
                     neighbourhood.reserve(Ni*Nj);
                     int index = 0;
-                    for(int ii = std::max(0, i-iRadius); ii <= std::min(nY-1, i+iRadius); ii++) {
-                        for(int jj = std::max(0, j-iRadius); jj <= std::min(nX-1, j+iRadius); jj++) {
+                    for(int ii = std::max(0, i-halfwidth); ii <= std::min(nY-1, i+halfwidth); ii++) {
+                        for(int jj = std::max(0, j-halfwidth); jj <= std::min(nX-1, j+halfwidth); jj++) {
                             float value = input[ii][jj];
                             if(gridpp::is_valid(value)) {
                                 assert(index < Ni*Nj);
@@ -178,9 +178,9 @@ vec2 gridpp::neighbourhood(const vec2& input, int iRadius, gridpp::Statistic sta
                 // Fast way: Compute stats on each sliver
                 std::vector<float> slivers(nX, 0);
                 for(int j = 0; j < nX; j++) {
-                    std::vector<float> sliver(2*iRadius+1, 0);
+                    std::vector<float> sliver(2*halfwidth+1, 0);
                     int count = 0;
-                    for(int ii = i - iRadius; ii <= i + iRadius; ii++) {
+                    for(int ii = i - halfwidth; ii <= i + halfwidth; ii++) {
                         sliver[count] = input[ii][j];
                         count++;
                     }
@@ -189,8 +189,8 @@ vec2 gridpp::neighbourhood(const vec2& input, int iRadius, gridpp::Statistic sta
                 }
                 for(int j = 0; j < nX; j++) {
                     std::vector<float> curr;
-                    curr.reserve(2*iRadius);
-                    for(int jj = std::max(0, j - iRadius); jj <= std::min(nX-1, j + iRadius); jj++) {
+                    curr.reserve(2*halfwidth);
+                    for(int jj = std::max(0, j - halfwidth); jj <= std::min(nX-1, j + halfwidth); jj++) {
                         curr.push_back(slivers[jj]);
                     }
                     values[i][j] = gridpp::calc_statistic(curr, statistic);
@@ -206,7 +206,7 @@ vec2 gridpp::neighbourhood(const vec2& input, int iRadius, gridpp::Statistic sta
         }
     }
     else if(statistic == gridpp::Std || statistic == gridpp::Variance) {
-        vec2 mean = gridpp::neighbourhood(input, iRadius, gridpp::Mean);
+        vec2 mean = gridpp::neighbourhood(input, halfwidth, gridpp::Mean);
         vec2 input2(nY);
         for(int y = 0; y < nY; y++) {
             input2[y].resize(input[y].size(), 0);
@@ -214,7 +214,7 @@ vec2 gridpp::neighbourhood(const vec2& input, int iRadius, gridpp::Statistic sta
                 input2[y][x] = input[y][x] * input[y][x];
             }
         }
-        vec2 mean2 = gridpp::neighbourhood(input2, iRadius, gridpp::Mean);
+        vec2 mean2 = gridpp::neighbourhood(input2, halfwidth, gridpp::Mean);
         if(statistic == gridpp::Std) {
             for(int y = 0; y < nY; y++) {
                 for(int x = 0; x < nX; x++) {
@@ -231,7 +231,7 @@ vec2 gridpp::neighbourhood(const vec2& input, int iRadius, gridpp::Statistic sta
         }
     }
     else {
-        output = gridpp::neighbourhood_brute_force(input, iRadius, statistic);
+        output = gridpp::neighbourhood_brute_force(input, halfwidth, statistic);
     }
     double e_time = gridpp::clock() ;
     // std::cout << count_stat << " " << e_time - s_time << " s" << std::endl;
@@ -290,15 +290,15 @@ vec gridpp::get_neighbourhood_thresholds(const vec3& input, int num_thresholds) 
     vec thresholds = gridpp::calc_even_quantiles(all_values, num_thresholds);
     return thresholds;
 }
-vec2 gridpp::neighbourhood_quantile_fast(const vec2& input, float quantile, int radius, const vec& thresholds) {
+vec2 gridpp::neighbourhood_quantile_fast(const vec2& input, float quantile, int halfwidth, const vec& thresholds) {
     vec2 quantile2(1);
     quantile2[0].resize(1);
     quantile2[0][0] = quantile;
-    return gridpp::neighbourhood_quantile_fast(input, quantile2, radius, thresholds);
+    return gridpp::neighbourhood_quantile_fast(input, quantile2, halfwidth, thresholds);
 }
-vec2 gridpp::neighbourhood_quantile_fast(const vec2& input, const vec2& quantile, int radius, const vec& thresholds) {
-    if(radius < 0)
-        throw std::invalid_argument("Radius must be > 0");
+vec2 gridpp::neighbourhood_quantile_fast(const vec2& input, const vec2& quantile, int halfwidth, const vec& thresholds) {
+    if(halfwidth < 0)
+        throw std::invalid_argument("Half width must be > 0");
 
     if(input.size() == 0 || input[0].size() == 0)
         return vec2();
@@ -349,7 +349,7 @@ vec2 gridpp::neighbourhood_quantile_fast(const vec2& input, const vec2& quantile
                     temp[y][x] = float(sum) / count;
             }
         }
-        stats[t] = gridpp::neighbourhood(temp, radius, gridpp::Mean);
+        stats[t] = gridpp::neighbourhood(temp, halfwidth, gridpp::Mean);
     }
 
     const bool is_fixed_quantile = quantile.size() == 1 && quantile[0].size() == 1;
@@ -397,15 +397,15 @@ vec2 gridpp::neighbourhood_quantile_fast(const vec2& input, const vec2& quantile
     return output;
 }
 
-vec2 gridpp::neighbourhood_quantile_fast(const vec3& input, float quantile, int radius, const vec& thresholds) {
+vec2 gridpp::neighbourhood_quantile_fast(const vec3& input, float quantile, int halfwidth, const vec& thresholds) {
     vec2 quantile2(1);
     quantile2[0].resize(1);
     quantile2[0][0] = quantile;
-    return gridpp::neighbourhood_quantile_fast(input, quantile2, radius, thresholds);
+    return gridpp::neighbourhood_quantile_fast(input, quantile2, halfwidth, thresholds);
 }
-vec2 gridpp::neighbourhood_quantile_fast(const vec3& input, const vec2& quantile, int radius, const vec& thresholds) {
-    if(radius < 0)
-        throw std::invalid_argument("Radius must be > 0");
+vec2 gridpp::neighbourhood_quantile_fast(const vec3& input, const vec2& quantile, int halfwidth, const vec& thresholds) {
+    if(halfwidth < 0)
+        throw std::invalid_argument("Half width must be > 0");
 
     if(input.size() == 0 || input[0].size() == 0 || input[0][0].size() == 0)
         return vec2();
@@ -457,7 +457,7 @@ vec2 gridpp::neighbourhood_quantile_fast(const vec3& input, const vec2& quantile
                     temp[y][x] = float(sum) / count;
             }
         }
-        stats[t] = gridpp::neighbourhood(temp, radius, gridpp::Mean);
+        stats[t] = gridpp::neighbourhood(temp, halfwidth, gridpp::Mean);
     }
 
     const bool is_fixed_quantile = quantile.size() == 1 && quantile[0].size() == 1;
@@ -506,38 +506,38 @@ vec2 gridpp::neighbourhood_quantile_fast(const vec3& input, const vec2& quantile
     // std::cout << e_time - s_time << " s" << std::endl;
     return output;
 }
-vec2 gridpp::neighbourhood_brute_force(const vec2& input, int iRadius, gridpp::Statistic statistic) {
-    return ::neighbourhood_brute_force(input, iRadius, statistic, 0);
+vec2 gridpp::neighbourhood_brute_force(const vec2& input, int halfwidth, gridpp::Statistic statistic) {
+    return ::neighbourhood_brute_force(input, halfwidth, statistic, 0);
 }
-vec2 gridpp::neighbourhood_brute_force(const vec3& input, int iRadius, gridpp::Statistic statistic) {
-    return ::neighbourhood_brute_force(input, iRadius, statistic, 0);
+vec2 gridpp::neighbourhood_brute_force(const vec3& input, int halfwidth, gridpp::Statistic statistic) {
+    return ::neighbourhood_brute_force(input, halfwidth, statistic, 0);
 }
-vec2 gridpp::neighbourhood_quantile(const vec2& input, float quantile, int iRadius) {
-    return ::neighbourhood_brute_force(input, iRadius, gridpp::Quantile, quantile);
+vec2 gridpp::neighbourhood_quantile(const vec2& input, float quantile, int halfwidth) {
+    return ::neighbourhood_brute_force(input, halfwidth, gridpp::Quantile, quantile);
 }
-vec2 gridpp::neighbourhood_quantile(const vec3& input, float quantile, int iRadius) {
-    return ::neighbourhood_brute_force(input, iRadius, gridpp::Quantile, quantile);
+vec2 gridpp::neighbourhood_quantile(const vec3& input, float quantile, int halfwidth) {
+    return ::neighbourhood_brute_force(input, halfwidth, gridpp::Quantile, quantile);
 }
 // Deprecated functions
-vec2 gridpp::neighbourhood_ens(const vec3& input, int iRadius, gridpp::Statistic statistic) {
+vec2 gridpp::neighbourhood_ens(const vec3& input, int halfwidth, gridpp::Statistic statistic) {
     gridpp::future_deprecation_warning("neighbourhood_ens", "neighbourhood");
-    return gridpp::neighbourhood(input, iRadius, statistic);
+    return gridpp::neighbourhood(input, halfwidth, statistic);
 }
-vec2 gridpp::neighbourhood_quantile_ens(const vec3& input, float quantile, int iRadius) {
+vec2 gridpp::neighbourhood_quantile_ens(const vec3& input, float quantile, int halfwidth) {
     gridpp::future_deprecation_warning("neighbourhood_quantile_ens", "neighbourhood_quantile");
-    return ::neighbourhood_brute_force(input, iRadius, gridpp::Quantile, quantile);
+    return ::neighbourhood_brute_force(input, halfwidth, gridpp::Quantile, quantile);
 }
-vec2 gridpp::neighbourhood_quantile_ens_fast(const vec3& input, float quantile, int radius, const vec& thresholds) {
+vec2 gridpp::neighbourhood_quantile_ens_fast(const vec3& input, float quantile, int halfwidth, const vec& thresholds) {
     gridpp::future_deprecation_warning("neighbourhood_quantile_ens_fast", "neighbourhood_quantile_fast");
-    return gridpp::neighbourhood_quantile_fast(input, quantile, radius, thresholds);
+    return gridpp::neighbourhood_quantile_fast(input, quantile, halfwidth, thresholds);
 }
 
 
 
 namespace {
-    vec2 neighbourhood_brute_force(const vec2& input, int iRadius, gridpp::Statistic statistic, float quantile) {
-        if(iRadius < 0)
-            throw std::invalid_argument("Radius must be > 0");
+    vec2 neighbourhood_brute_force(const vec2& input, int halfwidth, gridpp::Statistic statistic, float quantile) {
+        if(halfwidth < 0)
+            throw std::invalid_argument("Half width must be > 0");
         if(input.size() == 0 || input[0].size() == 0)
             return vec2();
 
@@ -557,14 +557,14 @@ namespace {
             for(int j = 0; j < nX; j++) {
                 // Put neighbourhood into vector
                 std::vector<float> neighbourhood;
-                int Ni = std::min(nY-1, i+iRadius) - std::max(0, i-iRadius) + 1;
-                int Nj = std::min(nX-1, j+iRadius) - std::max(0, j-iRadius) + 1;
+                int Ni = std::min(nY-1, i+halfwidth) - std::max(0, i-halfwidth) + 1;
+                int Nj = std::min(nX-1, j+halfwidth) - std::max(0, j-halfwidth) + 1;
                 assert(Ni > 0);
                 assert(Nj > 0);
                 neighbourhood.resize(Ni*Nj, gridpp::MV);
                 int index = 0;
-                for(int ii = std::max(0, i-iRadius); ii <= std::min(nY-1, i+iRadius); ii++) {
-                    for(int jj = std::max(0, j-iRadius); jj <= std::min(nX-1, j+iRadius); jj++) {
+                for(int ii = std::max(0, i-halfwidth); ii <= std::min(nY-1, i+halfwidth); ii++) {
+                    for(int jj = std::max(0, j-halfwidth); jj <= std::min(nX-1, j+halfwidth); jj++) {
                         float value = input[ii][jj];
                         assert(index < Ni*Nj);
                         neighbourhood[index] = value;
@@ -581,9 +581,9 @@ namespace {
         }
         return output;
     }
-    vec2 neighbourhood_brute_force(const vec3& input, int iRadius, gridpp::Statistic statistic, float quantile) {
-        if(iRadius < 0)
-            throw std::invalid_argument("Radius must be > 0");
+    vec2 neighbourhood_brute_force(const vec3& input, int halfwidth, gridpp::Statistic statistic, float quantile) {
+        if(halfwidth < 0)
+            throw std::invalid_argument("Half width must be > 0");
         if(input.size() == 0 || input[0].size() == 0 || input[0][0].size() == 0)
             return vec2();
 
@@ -606,14 +606,14 @@ namespace {
             for(int j = 0; j < nX; j++) {
                 // Put neighbourhood into vector
                 std::vector<float> neighbourhood;
-                int Ni = std::min(nY-1, i+iRadius) - std::max(0, i-iRadius) + 1;
-                int Nj = std::min(nX-1, j+iRadius) - std::max(0, j-iRadius) + 1;
+                int Ni = std::min(nY-1, i+halfwidth) - std::max(0, i-halfwidth) + 1;
+                int Nj = std::min(nX-1, j+halfwidth) - std::max(0, j-halfwidth) + 1;
                 assert(Ni > 0);
                 assert(Nj > 0);
                 neighbourhood.resize(Ni*Nj*nEns, gridpp::MV);
                 int index = 0;
-                for(int ii = std::max(0, i-iRadius); ii <= std::min(nY-1, i+iRadius); ii++) {
-                    for(int jj = std::max(0, j-iRadius); jj <= std::min(nX-1, j+iRadius); jj++) {
+                for(int ii = std::max(0, i-halfwidth); ii <= std::min(nY-1, i+halfwidth); ii++) {
+                    for(int jj = std::max(0, j-halfwidth); jj <= std::min(nX-1, j+halfwidth); jj++) {
                         for(int e = 0; e < nEns; e++) {
                             float value = input[ii][jj][e];
                             assert(index < Ni*Nj);

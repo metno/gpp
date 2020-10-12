@@ -189,77 +189,77 @@ namespace gridpp {
 
     /** Spatial neighbourhood filter, computing a statistic for a sliding square window
       * @param input 2D grid of values
-      * @param radius Filter radius in number of gridpoints
+      * @param halfwidth Filter halfwidth in number of gridpoints
       * @param statistic Statistic to compute
     */
-    vec2 neighbourhood(const vec2& input, int radius, Statistic statistic);
+    vec2 neighbourhood(const vec2& input, int halfwidth, Statistic statistic);
 
     /** Spatial neighbourhood filter for an ensemble of fields
       * @param input 3D grid of values with dimensions (Y, X, E)
-      * @param radius Filter radius in number of gridpoints
+      * @param halfwidth Filter halfwidth in number of gridpoints
       * @param statistic Statistic to compute
     */
-    vec2 neighbourhood(const vec3& input, int radius, Statistic statistic);
+    vec2 neighbourhood(const vec3& input, int halfwidth, Statistic statistic);
 
     /** Computes a quantile in a sliding square neighbourhood
       * @param input 2D grid of values
       * @param quantile Quantile to compute (between 0 and 1)
-      * @param radius Filter radius in number of gridpoints
+      * @param halfwidth Filter halfwidth in number of gridpoints
     */
-    vec2 neighbourhood_quantile(const vec2& input, float quantile, int radius);
+    vec2 neighbourhood_quantile(const vec2& input, float quantile, int halfwidth);
 
     /** Computes a quantile in a sliding square neighbourhood for an ensemble of fields
       * @param input 3D grid of values with dimensions (Y, X, E)
       * @param quantile Quantile to compute (between 0 and 1)
-      * @param radius Filter radius in number of gridpoints
+      * @param halfwidth Filter halfwidth in number of gridpoints
     */
-    vec2 neighbourhood_quantile(const vec3& input, float quantile, int radius);
+    vec2 neighbourhood_quantile(const vec3& input, float quantile, int halfwidth);
 
     /** Fast and approximate neighbourhood quantile
       * @param input 2D grid of values
       * @param quantile Quantile to compute (between 0 and 1)
-      * @param radius Filter radius in number of gridpoints
+      * @param halfwidth Filter halfwidth in number of gridpoints
       * @param thresholds Vector of thresholds to use to approximate value
     */
-    vec2 neighbourhood_quantile_fast(const vec2& input, float quantile, int radius, const vec& thresholds);
+    vec2 neighbourhood_quantile_fast(const vec2& input, float quantile, int halfwidth, const vec& thresholds);
 
     /** Fast and approximate neighbourhood quantile for ensemble of fields
       * @param input 3D grid of values with dimensions (Y, X, E)
       * @param quantile Quantile to compute (between 0 and 1)
-      * @param radius Filter radius in number of gridpoints
+      * @param halfwidth Filter halfwidth in number of gridpoints
       * @param thresholds Vector of thresholds to use to approximate value
     */
-    vec2 neighbourhood_quantile_fast(const vec3& input, float quantile, int radius, const vec& thresholds);
+    vec2 neighbourhood_quantile_fast(const vec3& input, float quantile, int halfwidth, const vec& thresholds);
 
     /** Fast and approximate neighbourhood quantile, with spatially varying quantile
       * @param input 2D grid of values
       * @param quantile 2D grid quantiles to compute (between 0 and 1)
-      * @param radius Filter radius in number of gridpoints
+      * @param halfwidth Filter halfwidth in number of gridpoints
       * @param thresholds Vector of thresholds to use to approximate value
     */
-    vec2 neighbourhood_quantile_fast(const vec2& input, const vec2& quantile, int radius, const vec& thresholds);
+    vec2 neighbourhood_quantile_fast(const vec2& input, const vec2& quantile, int halfwidth, const vec& thresholds);
 
     /** Fast and approximate neighbourhood quantile for ensemble of fields, with spatially varying quantile
       * @param input 3D grid of values with dimensions (Y, X, E)
       * @param quantile 2D grid quantiles to compute (between 0 and 1)
-      * @param radius Filter radius in number of gridpoints
+      * @param halfwidth Filter halfwidth in number of gridpoints
       * @param thresholds Vector of thresholds to use to approximate value
     */
-    vec2 neighbourhood_quantile_fast(const vec3& input, const vec2& quantile, int radius, const vec& thresholds);
+    vec2 neighbourhood_quantile_fast(const vec3& input, const vec2& quantile, int halfwidth, const vec& thresholds);
 
     /** Spatial neighbourhood filter without any shortcuts. This is quite slow and is only useful for testing.
       * @param input 2D grid of values
-      * @param radius Filter radius in number of gridpoints
+      * @param halfwidth Filter halfwidth in number of gridpoints
       * @param operation one of min, mean, median, max
     */
-    vec2 neighbourhood_brute_force(const vec2& input, int radius, Statistic statistic);
+    vec2 neighbourhood_brute_force(const vec2& input, int halfwidth, Statistic statistic);
 
     /** Spatial neighbourhood filter without any shortcuts. This is quite slow and is only useful for testing.
       * @param input 3D grid of values with dimensions (Y, X, E)
-      * @param radius Filter radius in number of gridpoints
+      * @param halfwidth Filter halfwidth in number of gridpoints
       * @param operation one of min, mean, median, max
     */
-    vec2 neighbourhood_brute_force(const vec3& input, int radius, Statistic statistic);
+    vec2 neighbourhood_brute_force(const vec3& input, int halfwidth, Statistic statistic);
 
     /** Calculate appropriate approximation thresholds for neighbourhood quantile
       * @param input 2D (Y, X) array of values
@@ -275,10 +275,10 @@ namespace gridpp {
 
     /** Deprecated: Compute neighbourhood statistic on ensemble field
       * @deprecated Use neighbourhood() function */
-    vec2 neighbourhood_ens(const vec3& input, int radius, Statistic statistic);
+    vec2 neighbourhood_ens(const vec3& input, int halfwidth, Statistic statistic);
     /** Deprecated: Compute neighbourhood quantiles on ensemble field
       * @deprecated Use neighbourhood_quantile() function */
-    vec2 neighbourhood_quantile_ens(const vec3& input, float quantile, int radius);
+    vec2 neighbourhood_quantile_ens(const vec3& input, float quantile, int halfwidth);
     /** Deprecated: Compute neighbourhood quantiles fast on ensemble field
       * @deprecated Use neighbourhood_quantile_fast() function */
     vec2 neighbourhood_quantile_ens_fast(const vec3& input, float quantile, int radius, const vec& thresholds);
