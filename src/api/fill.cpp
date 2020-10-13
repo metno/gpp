@@ -4,6 +4,15 @@
 using namespace gridpp;
 
 vec2 gridpp::fill(const Grid& igrid, const vec2& input, const Points& points, const vec& radii, float value, bool outside) {
+    if(gridpp::compatible_size(igrid, input))
+        throw std::invalid_argument("Grid size is not the same as values");
+    if(points.size() != radii.size())
+        throw std::invalid_argument("Points size is not the same as radii size");
+    for(int i = 0; i < radii.size(); i++) {
+        if(radii[i] < 0)
+            throw std::invalid_argument("All radius sizes must be 0 or greater");
+    }
+
     double s_time = gridpp::clock();
     vec lats = points.get_lats();
     vec lons = points.get_lons();
