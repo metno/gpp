@@ -10,7 +10,7 @@
     #include <omp.h>
 #endif
 
-#define GRIDPP_VERSION "0.5.0a1"
+#define GRIDPP_VERSION "0.5.0a2"
 #define __version__ GRIDPP_VERSION
 
 namespace gridpp {
