@@ -165,7 +165,7 @@ void gridpp::error(std::string iMessage) {
 #else
     std::cout << "Error: " << iMessage << std::endl;
 #endif
-    abort();
+    throw std::runtime_error(iMessage);
 }
 void gridpp::future_deprecation_warning(std::string function, std::string other) {
     std::cout << "Future deprecation warning: " << function << " will be deprecated";

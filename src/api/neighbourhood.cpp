@@ -616,13 +616,13 @@ namespace {
                     for(int jj = std::max(0, j-halfwidth); jj <= std::min(nX-1, j+halfwidth); jj++) {
                         for(int e = 0; e < nEns; e++) {
                             float value = input[ii][jj][e];
-                            assert(index < Ni*Nj);
+                            assert(index < Ni*Nj*nEns);
                             neighbourhood[index] = value;
                             index++;
                         }
                     }
                 }
-                assert(index == Ni*Nj);
+                assert(index == Ni*Nj*nEns);
                 if(statistic == gridpp::Quantile)
                     output[i][j] = gridpp::calc_quantile(neighbourhood, quantile);
                 else

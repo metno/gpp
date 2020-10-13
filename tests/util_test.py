@@ -32,12 +32,19 @@ class Test(unittest.TestCase):
         self.assertFalse(gridpp.is_valid(np.inf))
         self.assertFalse(gridpp.is_valid(np.nan))
 
-    def test_calc_statistic(self):
+    def test_calc_statistic_mean(self):
         self.assertEqual(gridpp.calc_statistic([0, 1, 2], gridpp.Mean), 1)
         self.assertEqual(gridpp.calc_statistic([0, 1, np.nan], gridpp.Mean), 0.5)
         self.assertEqual(gridpp.calc_statistic([np.nan, 1, np.nan], gridpp.Mean), 1)
         self.assertTrue(np.isnan(gridpp.calc_statistic([np.nan, np.nan, np.nan], gridpp.Mean)))
         self.assertTrue(np.isnan(gridpp.calc_statistic([], gridpp.Mean)))
+
+    def test_calc_statistic_sum(self):
+        self.assertEqual(gridpp.calc_statistic([0, 1, 2], gridpp.Sum), 3)
+        self.assertEqual(gridpp.calc_statistic([0, 1, np.nan], gridpp.Sum), 1)
+        self.assertEqual(gridpp.calc_statistic([np.nan, 1, np.nan], gridpp.Sum), 1)
+        self.assertTrue(np.isnan(gridpp.calc_statistic([np.nan, np.nan, np.nan], gridpp.Sum)))
+        self.assertTrue(np.isnan(gridpp.calc_statistic([], gridpp.Sum)))
 
     def test_calc_quantile(self):
         self.assertEqual(gridpp.calc_quantile([0, 1, 2], 0), 0)
@@ -69,6 +76,22 @@ class Test(unittest.TestCase):
         self.assertEqual(gridpp.num_missing_values([[np.nan, np.nan], [np.nan, np.inf]]), 4)
         self.assertEqual(gridpp.num_missing_values([[0, 0], [1, 1]]), 0)
         self.assertEqual(gridpp.num_missing_values([[]]), 0)
+
+    def test_calc_statistics_2d(self):
+        values = np.reshape(np.arange(9), [3, 3])
+        output = gridpp.calc_statistic(values, gridpp.Mean)
+        np.testing.assert_array_almost_equal(output, [1, 4, 7])
+
+    def test_warning(self):
+        gridpp.warning("test")
+
+    def test_error(self):
+        with self.assertRaises(Exception) as e:
+            gridpp.error("test")
+
+    def test_not_implemented_error(self):
+        with self.assertRaises(Exception) as e:
+            gridpp.not_implemented_error("test")
 
 
 if __name__ == '__main__':

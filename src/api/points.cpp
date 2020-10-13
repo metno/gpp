@@ -16,13 +16,11 @@ gridpp::Points::Points(vec lats, vec lons, vec elevs, vec lafs, CoordinateType t
     int N = mLats.size();
     if(mElevs.size() != N) {
         mElevs.clear();
-        for(int i = 0; i < N; i++)
-            mElevs.push_back(0);
+        mElevs.resize(N, gridpp::MV);
     }
     if(mLafs.size() != N) {
         mLafs.clear();
-        for(int i = 0; i < N; i++)
-            mLafs.push_back(1);
+        mLafs.resize(N, gridpp::MV);
     }
 }
 gridpp::Points::Points(KDTree tree, vec elevs, vec lafs) {

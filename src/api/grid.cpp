@@ -33,14 +33,14 @@ gridpp::Grid::Grid(vec2 lats, vec2 lons, vec2 elevs, vec2 lafs, CoordinateType t
         mElevs.clear();
         mElevs.resize(lats.size());
         for(int i = 0; i < lats.size(); i++) {
-            mElevs[i].resize(lats[0].size(), 0);
+            mElevs[i].resize(lats[0].size(), gridpp::MV);
         }
     }
     if(mLafs.size() != lats.size() or mLafs[0].size() != lats[0].size()) {
         mLafs.clear();
         mLafs.resize(lats.size());
         for(int i = 0; i < lats.size(); i++) {
-            mLafs[i].resize(lats[0].size(), 1);
+            mLafs[i].resize(lats[0].size(), gridpp::MV);
         }
     }
 }
