@@ -98,12 +98,6 @@ vec3 gridpp::optimal_interpolation_ensi(const gridpp::Grid& bgrid,
         pbackground[s] = pbackground0[indices[s]];
     }
 
-
-    std::stringstream ss;
-    ss << "Number of observations: " << nS << std::endl;
-    ss << "Number of gridpoints: " << nY << " " << nX;
-    gridpp::debug(ss.str());
-
     float localizationRadius = structure.localization_distance();
 
     // Compute Y

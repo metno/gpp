@@ -133,11 +133,6 @@ vec gridpp::optimal_interpolation(const gridpp::Points& bpoints,
     vec plafs = points.get_lafs();
     int nS = plats.size();
 
-    std::stringstream ss;
-    ss << "Number of observations: " << nS << std::endl;
-    ss << "Number of gridpoints: " << nY;
-    gridpp::debug(ss.str());
-
     float localizationRadius = structure.localization_distance();
 
     // Compute the background value at observation points (Y)
