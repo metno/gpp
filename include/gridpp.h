@@ -75,12 +75,12 @@ namespace gridpp {
 
     /** Binary verification metrics */
     enum Metric {
-        Ets       = 0,  /**< Mean of values */
-        Ts        = 1,  /**< Mean of values */
-        Kss       = 20, /**< Minimum of values */
-        Pc        = 30, /**< Minimum of values */
-        Bias      = 40, /**< Minimum of values */
-        Hss       = 50, /**< Minimum of values */
+        Ets       = 0,  /**< Equitable threat score */
+        Ts        = 1,  /**< Threat score */
+        Kss       = 20, /**< Hannsen-Kuiper skill score */
+        Pc        = 30, /**< Proportion correct */
+        Bias      = 40, /**< Bias */
+        Hss       = 50, /**< Heidke skill score */
     };
 
     /** Method for statistical correction */
