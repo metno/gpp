@@ -6,6 +6,7 @@ if(SWIG_VERSION GREATER_EQUAL 4)
 endif()
 set_source_files_properties(../${PROJECT_NAME}.i PROPERTIES CPLUSPLUS ON)
 include_directories(../../include)
+include_directories(/usr/lib64/python3.6/site-packages/numpy/core/include)
 
 # Add swig module
 #set(CMAKE_SWIG_FLAGS -interface _pygridpp)

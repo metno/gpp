@@ -50,12 +50,10 @@ vec3 gridpp::optimal_interpolation_ensi(const gridpp::Grid& bgrid,
     if(psigmas0.size() != points0.size())
         throw std::runtime_error("Ci and points size mismatch");
 
-    double s_time = gridpp::clock();
     int mX = 0;
     int mY = 0;
     int mMinValidEns = 5;
     int numParameters = 2;
-    float sigmac = 0.5;
     float delta = 1;
     bool mExtrapolate = false;
     bool mDiagnose = false;
