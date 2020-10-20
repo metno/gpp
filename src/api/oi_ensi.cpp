@@ -113,12 +113,10 @@ vec2 gridpp::optimal_interpolation_ensi(const gridpp::Points& bpoints,
     if(pbackground.size() != points.size())
         throw std::invalid_argument("Background and points size mismatch");
 
-    double s_time = gridpp::clock();
-    int mX = -1;
-    int mY = -1;
+    int mX = 0;
+    int mY = 0;
     int mMinValidEns = 5;
     int numParameters = 2;
-    float sigmac = 0.5;
     float delta = 1;
     bool mExtrapolate = false;
     bool mDiagnose = false;
