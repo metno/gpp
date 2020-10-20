@@ -1,5 +1,5 @@
 Name: SMHI-gridpp-lib
-Version: 0.5
+Version: 0.1
 Release: 1
 Summary: Driver library for SMHI's GridPP version
 License: SMHI
@@ -40,7 +40,6 @@ cp ${RPM_SOURCE_DIR}/build/extras/SWIG/python/_gridpp.so $RPM_BUILD_ROOT%{INSTAL
 %clean
 
 rm -rf $RPM_BUILD_ROOT
-rm -rf $RPM_SOURCE_DIR
 
 %files
 %{INSTALLDIR}/*.py
@@ -52,7 +51,5 @@ rm -rf $RPM_SOURCE_DIR
 
 %changelog
 
-* Tue Nov 24 2020 Aliaksandr Rahachou <aliaksandr.rahachou@hiq.se> - 0.5-1
-- GridPP 0.5.1
 * Thu Oct 15 2020 Aliaksandr Rahachou <aliaksandr.rahachou@hiq.se> - 0.1-1
 - First variant, GridPP 0.4.2b
