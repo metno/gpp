@@ -39,8 +39,7 @@ cp ${RPM_SOURCE_DIR}/build/extras/SWIG/python/_gridpp.so $RPM_BUILD_ROOT%{INSTAL
 
 %clean
 
-rm -rf ${RPM_BUILD_ROOT}
-rm -rf ${RPM_SOURCE_DIR}
+rm -rf $RPM_BUILD_ROOT
 
 %files
 %{INSTALLDIR}/*.py
