@@ -37,7 +37,8 @@ vec3 gridpp::optimal_interpolation_ensi(const gridpp::Grid& bgrid,
         const vec& psigmas,
         const vec2& pbackground,
         const gridpp::StructureFunction& structure,
-        int max_points) {
+        int max_points,
+        float cross_validation_distance) {
     double s_time = gridpp::clock();
 
     // Check input data
@@ -45,22 +46,22 @@ vec3 gridpp::optimal_interpolation_ensi(const gridpp::Grid& bgrid,
         throw std::invalid_argument("max_points must be >= 0");
 
     if(bgrid.get_coordinate_type() != points.get_coordinate_type()) {
-        throw std::invalid_argument("Both background grid and observations points must be of same coordinate type (lat/lon or x/y)");
+        throw std::runtime_error("Both background grid and observations points must be of same coordinate type (lat/lon or x/y)");
     }
     if(background.size() != bgrid.size()[0] || background[0].size() != bgrid.size()[1]) {
         std::stringstream ss;
         ss << "input field (" << bgrid.size()[0] << "," << bgrid.size()[1] << ") is not the same size as the grid (" << background.size() << "," << background[0].size() << ")";
-        throw std::invalid_argument(ss.str());
+        throw std::runtime_error(ss.str());
     }
     if(pobs.size() != points.size()) {
         std::stringstream ss;
         ss << "Observations (" << pobs.size() << ") and points (" << points.size() << ") size mismatch";
-        throw std::invalid_argument(ss.str());
+        throw std::runtime_error(ss.str());
     }
     if(psigmas.size() != points.size()) {
         std::stringstream ss;
         ss << "Sigmas (" << psigmas.size() << ") and points (" << points.size() << ") size mismatch";
-        throw std::invalid_argument(ss.str());
+        throw std::runtime_error(ss.str());
     }
 
     int nY = background.size();
@@ -78,7 +79,7 @@ vec3 gridpp::optimal_interpolation_ensi(const gridpp::Grid& bgrid,
             count++;
         }
     }
-    vec2 output1 = optimal_interpolation_ensi(bpoints, background1, points, pobs, psigmas, pbackground, structure, max_points);
+    vec2 output1 = optimal_interpolation_ensi(bpoints, background1, points, pobs, psigmas, pbackground, structure, max_points, cross_validation_distance);
     vec3 output = gridpp::init_vec3(nY, nX, nE);
     count = 0;
     for(int y = 0; y < nY; y++) {
@@ -98,23 +99,23 @@ vec2 gridpp::optimal_interpolation_ensi(const gridpp::Points& bpoints,
         const vec& psigmas,   // pci
         const vec2& pbackground,
         const gridpp::StructureFunction& structure,
-        int max_points) {
+        int max_points,
+        float cross_validation_distance) {
     if(max_points < 0)
         throw std::invalid_argument("max_points must be >= 0");
     if(bpoints.get_coordinate_type() != points.get_coordinate_type()) {
-        throw std::invalid_argument("Both background and observations points must be of same coorindate type (lat/lon or x/y)");
+        throw std::runtime_error("Both background and observations points must be of same coorindate type (lat/lon or x/y)");
     }
     if(background.size() != bpoints.size())
-        throw std::invalid_argument("Input field is not the same size as the grid");
+        throw std::runtime_error("Input field is not the same size as the grid");
     if(pobs.size() != points.size())
-        throw std::invalid_argument("Observations and points exception mismatch");
+        throw std::runtime_error("Observations and points exception mismatch");
     if(psigmas.size() != points.size())
-        throw std::invalid_argument("Sigmas and points size mismatch");
-    if(pbackground.size() != points.size())
-        throw std::invalid_argument("Background and points size mismatch");
+        throw std::runtime_error("Sigmas and points size mismatch");
 
-    int mX = 0;
-    int mY = 0;
+    double s_time = gridpp::clock();
+    int mX = -1;
+    int mY = -1;
     int mMinValidEns = 5;
     int numParameters = 2;
     float delta = 1;
@@ -181,10 +182,21 @@ vec2 gridpp::optimal_interpolation_ensi(const gridpp::Points& bpoints,
         float lon = blons[y];
         float elev = belevs[y];
         float laf = blafs[y];
-        Point p1 = bpoints.get_point(y);
 
         // Create list of locations for this gridpoint
-        ivec lLocIndices0 = points.get_neighbours(lat, lon, localizationRadius);
+        ivec lLocIndices0;
+        if(gridpp::is_valid(cross_validation_distance)) {
+            vec distances;
+            ivec temp = points.get_neighbours_with_distance(lat, lon, localizationRadius, distances);
+            for(int s = 0; s < distances.size(); s++) {
+                if(distances[s] > cross_validation_distance) {
+                    lLocIndices0.push_back(temp[s]);
+                }
+            }
+        }
+        else {
+            lLocIndices0 = points.get_neighbours(lat, lon, localizationRadius);
+        }
         if(lLocIndices0.size() == 0) {
             // If we have too few observations though, then use the background
             output[y] = background[y];
@@ -197,8 +209,9 @@ vec2 gridpp::optimal_interpolation_ensi(const gridpp::Points& bpoints,
         lRhos0.reserve(lLocIndices0.size());
         for(int i = 0; i < lLocIndices0.size(); i++) {
             int index = lLocIndices0[i];
-            Point p2 = points.get_point(index);
-            float rho = structure.corr_background(p1, p2);
+            Point p1(plats[index], plons[index], pelevs[index], plafs[index]);
+            Point p2(lat, lon, elev, laf);
+            float rho = structure.corr(p1, p2);
             if(rho > 0) {
                 lRhos0.push_back(std::pair<float,int>(rho, i));
             }
