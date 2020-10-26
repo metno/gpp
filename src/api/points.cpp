@@ -7,13 +7,19 @@ gridpp::Points::Points() {
 
 }
 gridpp::Points::Points(vec lats, vec lons, vec elevs, vec lafs, CoordinateType type) {
+    int N = lats.size();
+    if(lons.size() != N)
+        throw std::invalid_argument("Cannot create points with unequal lat and lon sizes");
+    if(elevs.size() != 0 && elevs.size() != N)
+        throw std::invalid_argument("'elevs' must either be size 0 or the same size at lats/lons");
+    if(lafs.size() != 0 && lafs.size() != N)
+        throw std::invalid_argument("'lafs' must either be size 0 or the same size at lats/lons");
     mLats = lats;
     mLons = lons;
     mElevs = elevs;
     mLafs = lafs;
     KDTree tree = KDTree(lats, lons, type);
     mTree = tree;
-    int N = mLats.size();
     if(mElevs.size() != N) {
         mElevs.clear();
         mElevs.resize(N, gridpp::MV);
