@@ -106,8 +106,10 @@ float gridpp::CrossValidation::corr(const Point& p1, const Point& p2) const {
 }
 float gridpp::CrossValidation::corr_background(const Point& p1, const Point& p2) const {
     float hdist = gridpp::KDTree::calc_distance_fast(p1, p2);
-    if(m_dist > 0 && hdist < m_dist)
-        return 0;
+    if(gridpp::is_valid(m_dist)) {
+        if(hdist <= m_dist)
+            return 0;
+    }
     return m_structure->corr_background(p1, p2);
 }
 gridpp::StructureFunction* gridpp::CrossValidation::clone() const {

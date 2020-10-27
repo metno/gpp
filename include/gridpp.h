@@ -776,7 +776,11 @@ namespace gridpp {
     };
     class CrossValidation: public StructureFunction {
         public:
-            CrossValidation(StructureFunction& structure, float dist=0);
+            /** Structure function for performing cross validation experiments
+              * @param dist: Force background-to-obs correlation to 0 for points within
+              *   this distance [m]. If MV, disable this.
+            */
+            CrossValidation(StructureFunction& structure, float dist=MV);
             float corr(const Point& p1, const Point& p2) const;
             float corr_background(const Point& p1, const Point& p2) const;
             StructureFunction* clone() const;
