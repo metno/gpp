@@ -794,24 +794,40 @@ namespace gridpp {
 
     class Transform {
         public:
-            virtual float forward(float value) const = 0;
-            virtual float backward(float value) const = 0;
-            virtual vec2 forward(const vec2& input) const;
-            virtual vec2 backward(const vec2& input) const;
+            // Note these cannot be pure virtual, otherwise SWIG does not expose
+            // the vector functions (with the same name) in python. Therefore, make sure these
+            // functions are overloaded in the subclass implementation
+            virtual float forward(float value) const;
+            virtual float backward(float value) const;
+
+            vec forward(const vec& input) const;
+            vec backward(const vec& input) const;
+            vec2 forward(const vec2& input) const;
+            vec2 backward(const vec2& input) const;
+            vec3 forward(const vec3& input) const;
+            vec3 backward(const vec3& input) const;
     };
     class Identity : public Transform {
         public:
+            // SWIG requires these "using" statements to enable the vectorized versions in the
+            // subclasses
+            using Transform::forward;
+            using Transform::backward;
             float forward(float value) const;
             float backward(float value) const;
     };
     class Log : public Transform {
         public:
+            using Transform::forward;
+            using Transform::backward;
             float forward(float value) const;
             float backward(float value) const;
     };
     class BoxCox : public Transform {
         public:
             BoxCox(float threshold);
+            using Transform::forward;
+            using Transform::backward;
             float forward(float value) const;
             float backward(float value) const;
         private:
