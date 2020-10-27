@@ -289,7 +289,6 @@ namespace std {
         for(int i = 0; i < s0; i++) {
             temp[i] = std::vector<DTYPE>(arg + i*s1, arg + i*s1 + s1);
         }
-        assert(s1 > 0);
         $1 = &temp;
     }
     else {
@@ -328,7 +327,6 @@ namespace std {
         for(int i = 0; i < s0; i++) {
             temp[i] = std::vector<DTYPE>(arg + i*s1, arg + i*s1 + s1);
         }
-        assert(s1 > 0);
         $1 = &temp;
     }
     else {
@@ -466,7 +464,6 @@ namespace std {
                 temp[i][j] = std::vector<DTYPE>(arg + i * s1 * s2 + j * s2, arg + i * s1 * s2 + (j + 1) * s2);
             }
         }
-        assert(s1 > 0);
         $1 = &temp;
     }
     else {
@@ -509,7 +506,6 @@ namespace std {
                 temp[i][j] = std::vector<DTYPE>(arg + i * s1 * s2 + j * s2, arg + i * s1 * s2 + (j + 1) * s2);
             }
         }
-        assert(s1 > 0);
         $1 = &temp;
     }
     else {

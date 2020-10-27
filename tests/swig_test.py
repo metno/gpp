@@ -94,6 +94,24 @@ class SwigTest(unittest.TestCase):
         ar = [1, 2, 3]
         gridpp.test_array(ar)
 
+    def test_zero_size_dimension(self):
+        """Test arrays with a 0-length dimension"""
+        self.assertEqual(0, gridpp.test_vec_input(np.zeros([0])))
+        self.assertEqual(0, gridpp.test_vec_input([]))
+
+        # 2D
+        self.assertEqual(0, gridpp.test_vec2_input(np.zeros([3, 0])))
+        self.assertEqual(0, gridpp.test_vec2_input(np.zeros([0, 3])))
+        self.assertEqual(0, gridpp.test_vec2_input(np.zeros([0, 0])))
+
+        # 3D
+        self.assertEqual(0, gridpp.test_vec3_input(np.zeros([3, 3, 0])))
+        self.assertEqual(0, gridpp.test_vec3_input(np.zeros([3, 0, 3])))
+        self.assertEqual(0, gridpp.test_vec3_input(np.zeros([0, 3, 3])))
+        self.assertEqual(0, gridpp.test_vec3_input(np.zeros([3, 0, 0])))
+        self.assertEqual(0, gridpp.test_vec3_input(np.zeros([0, 3, 0])))
+        self.assertEqual(0, gridpp.test_vec3_input(np.zeros([3, 0, 0])))
+
 
 if __name__ == '__main__':
     unittest.main()
