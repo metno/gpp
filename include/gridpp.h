@@ -643,11 +643,11 @@ namespace gridpp {
     void not_implemented_error();
 
     /** Initialize a vector of size Y, X, with a given value */
-    ivec2 init_ivec2(int Y, int X, int value=MV);
+    ivec2 init_ivec2(int Y, int X, int value);
     vec2 init_vec2(int Y, int X, float value=MV);
 
     /** Initialize a vector of size Y, X, E, with a given value */
-    ivec3 init_ivec3(int Y, int X, int E, int value=MV);
+    ivec3 init_ivec3(int Y, int X, int E, int value);
     vec3 init_vec3(int Y, int X, int E, float value=MV);
 
     /** Get reasonably spaced quantiles from a vector of values, ignoring duplicate values
