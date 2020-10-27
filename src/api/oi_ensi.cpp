@@ -37,8 +37,7 @@ vec3 gridpp::optimal_interpolation_ensi(const gridpp::Grid& bgrid,
         const vec& psigmas,
         const vec2& pbackground,
         const gridpp::StructureFunction& structure,
-        int max_points,
-        float cross_validation_distance) {
+        int max_points) {
     double s_time = gridpp::clock();
 
     // Check input data
@@ -79,7 +78,7 @@ vec3 gridpp::optimal_interpolation_ensi(const gridpp::Grid& bgrid,
             count++;
         }
     }
-    vec2 output1 = optimal_interpolation_ensi(bpoints, background1, points, pobs, psigmas, pbackground, structure, max_points, cross_validation_distance);
+    vec2 output1 = optimal_interpolation_ensi(bpoints, background1, points, pobs, psigmas, pbackground, structure, max_points);
     vec3 output = gridpp::init_vec3(nY, nX, nE);
     count = 0;
     for(int y = 0; y < nY; y++) {
@@ -99,8 +98,7 @@ vec2 gridpp::optimal_interpolation_ensi(const gridpp::Points& bpoints,
         const vec& psigmas,   // pci
         const vec2& pbackground,
         const gridpp::StructureFunction& structure,
-        int max_points,
-        float cross_validation_distance) {
+        int max_points) {
     if(max_points < 0)
         throw std::invalid_argument("max_points must be >= 0");
     if(bpoints.get_coordinate_type() != points.get_coordinate_type()) {
@@ -184,19 +182,7 @@ vec2 gridpp::optimal_interpolation_ensi(const gridpp::Points& bpoints,
         float laf = blafs[y];
 
         // Create list of locations for this gridpoint
-        ivec lLocIndices0;
-        if(gridpp::is_valid(cross_validation_distance)) {
-            vec distances;
-            ivec temp = points.get_neighbours_with_distance(lat, lon, localizationRadius, distances);
-            for(int s = 0; s < distances.size(); s++) {
-                if(distances[s] > cross_validation_distance) {
-                    lLocIndices0.push_back(temp[s]);
-                }
-            }
-        }
-        else {
-            lLocIndices0 = points.get_neighbours(lat, lon, localizationRadius);
-        }
+        ivec lLocIndices0 = points.get_neighbours(lat, lon, localizationRadius);
         if(lLocIndices0.size() == 0) {
             // If we have too few observations though, then use the background
             output[y] = background[y];

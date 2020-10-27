@@ -110,7 +110,6 @@ namespace gridpp {
       * @param pbackground Background with observation operator
       * @param structure Structure function
       * @param max_points Maximum number of observations to use inside localization zone; Use 0 to disable
-      * @param cross_validation_distance Exclude observations within this distance of the gridpoint [m]
     */
     vec2 optimal_interpolation(const Grid& bgrid,
             const vec2& background,
@@ -119,8 +118,7 @@ namespace gridpp {
             const vec& pratios,
             const vec& pbackground,
             const StructureFunction& structure,
-            int max_points,
-            float cross_validation_distance=MV);
+            int max_points);
 
     /** Optimal interpolation for a deterministic vector of points
       * @param bpoints Points of background field
@@ -131,7 +129,6 @@ namespace gridpp {
       * @param pbackground Background with observation operator
       * @param structure Structure function
       * @param max_points Maximum number of observations to use inside localization zone; Use 0 to disable
-      * @param cross_validation_distance Exclude observations within this distance of the gridpoint [m]
     */
     vec optimal_interpolation(const Points& bpoints,
             const vec& background,
@@ -140,8 +137,7 @@ namespace gridpp {
             const vec& pratios,
             const vec& pbackground,
             const StructureFunction& structure,
-            int max_points,
-            float cross_validation_distance=MV);
+            int max_points);
 
     /** This is its own function because the variance parameterization is different than in the
       * non-transformed case */
@@ -165,8 +161,7 @@ namespace gridpp {
             const vec& pbackground,
             const StructureFunction& structure,
             int max_points,
-            const Transform& transform,
-            float cross_validation_distance=MV);
+            const Transform& transform);
 
     /** Optimal interpolation using a structure function based on an ensemble 
       * See Lussana et al 2019 (DOI: 10.1002/qj.3646)
@@ -183,8 +178,7 @@ namespace gridpp {
             const vec& psigmas,
             const vec2& pbackground,
             const StructureFunction& structure,
-            int max_points,
-            float cross_validation_distance=MV);
+            int max_points);
 
     vec2 optimal_interpolation_ensi(const Points& bpoints,
             const vec2& background,
@@ -193,8 +187,7 @@ namespace gridpp {
             const vec& psigmas,
             const vec2& pbackground,
             const StructureFunction& structure,
-            int max_points,
-            float cross_validation_distance=MV);
+            int max_points);
 
     /** Fill in values inside or outside a set of circles
       * @param input Deterministic values with dimensions Y, X

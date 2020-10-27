@@ -29,8 +29,7 @@ vec2 gridpp::optimal_interpolation(const gridpp::Grid& bgrid,
         const vec& pratios,
         const vec& pbackground,
         const gridpp::StructureFunction& structure,
-        int max_points,
-        float cross_validation_distance) {
+        int max_points) {
     double s_time = gridpp::clock();
 
     // Check input data
@@ -68,7 +67,7 @@ vec2 gridpp::optimal_interpolation(const gridpp::Grid& bgrid,
             count++;
         }
     }
-    vec output1 = optimal_interpolation(bpoints, background1, points, pobs, pratios, pbackground, structure, max_points, cross_validation_distance);
+    vec output1 = optimal_interpolation(bpoints, background1, points, pobs, pratios, pbackground, structure, max_points);
     vec2 output = gridpp::init_vec2(nY, nX);
     count = 0;
     for(int y = 0; y < nY; y++) {
@@ -87,8 +86,7 @@ vec gridpp::optimal_interpolation(const gridpp::Points& bpoints,
         const vec& pratios,   // gCi
         const vec& pbackground,
         const gridpp::StructureFunction& structure,
-        int max_points,
-        float cross_validation_distance) {
+        int max_points) {
     double s_time = gridpp::clock();
 
     // Check input data
@@ -146,19 +144,7 @@ vec gridpp::optimal_interpolation(const gridpp::Points& bpoints,
 
         // Find observations within localization radius
         // TODO: Check that the chosen ones have elevation
-        ivec lLocIndices0;
-        if(gridpp::is_valid(cross_validation_distance)) {
-            vec distances;
-            ivec temp = points.get_neighbours_with_distance(lat, lon, localizationRadius, distances);
-            for(int s = 0; s < distances.size(); s++) {
-                if(distances[s] > cross_validation_distance) {
-                    lLocIndices0.push_back(temp[s]);
-                }
-            }
-        }
-        else {
-            lLocIndices0 = points.get_neighbours(lat, lon, localizationRadius);
-        }
+        ivec lLocIndices0 = points.get_neighbours(lat, lon, localizationRadius);
         if(lLocIndices0.size() == 0) {
             // If we have too few observations though, then use the background
             output[y] = background[y];
@@ -249,8 +235,7 @@ vec gridpp::optimal_interpolation_transform(const gridpp::Points& bpoints,
         const vec& pbackground,
         const gridpp::StructureFunction& structure,
         int max_points,
-        const gridpp::Transform& transform,
-        float cross_validation_distance) {
+        const gridpp::Transform& transform) {
 
     // Check input data
     if(max_points < 0)
