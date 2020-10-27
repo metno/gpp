@@ -124,9 +124,6 @@ vec gridpp::optimal_interpolation(const gridpp::Points& bpoints,
     vec belevs = bpoints.get_elevs();
     vec blafs = bpoints.get_lafs();
 
-    ////////////////////////////////////
-    // Remove stations outside domain //
-    ////////////////////////////////////
     vec plats = points.get_lats();
     vec plons = points.get_lons();
     vec pelevs = points.get_elevs();
@@ -243,12 +240,89 @@ vec gridpp::optimal_interpolation(const gridpp::Points& bpoints,
     return output;
 }
 
+vec gridpp::optimal_interpolation_transform(const gridpp::Points& bpoints,
+        const vec& background,
+        float bsigma,
+        const gridpp::Points& points,
+        const vec& pobs,
+        const vec& psigmas,
+        const vec& pbackground,
+        const gridpp::StructureFunction& structure,
+        int max_points,
+        const gridpp::Transform& transform,
+        float cross_validation_distance) {
+
+    // Check input data
+    if(max_points < 0)
+        throw std::invalid_argument("max_points must be >= 0");
+
+    if(bpoints.get_coordinate_type() != points.get_coordinate_type()) {
+        throw std::runtime_error("Both background points and observations points must be of same coordinate type (lat/lon or x/y)");
+    }
+    if(background.size() != bpoints.size()) {
+        std::stringstream ss;
+        ss << "Input field (" << bpoints.size() << ") is not the same size as the grid (" << background.size() << ")";
+        throw std::runtime_error(ss.str());
+    }
+    if(pobs.size() != points.size()) {
+        std::stringstream ss;
+        ss << "Observations (" << pobs.size() << ") and points (" << points.size() << ") size mismatch";
+        throw std::runtime_error(ss.str());
+    }
+    if(psigmas.size() != points.size()) {
+        std::stringstream ss;
+        ss << "Sigmas (" << psigmas.size() << ") and points (" << points.size() << ") size mismatch";
+        throw std::runtime_error(ss.str());
+    }
+
+    if(bpoints.get_coordinate_type() != points.get_coordinate_type()) {
+        throw std::runtime_error("Both background and observations points must be of same coordinate type (lat/lon or x/y)");
+    }
+    int nY = background.size();
+    int nS = points.size();
+
+    // Transform the background
+    vec background_transformed = background;
+    // #pragma omp parallel for
+    for(int y = 0; y < nY; y++) {
+        float value = background_transformed[y];
+        if(gridpp::is_valid(value))
+            background_transformed[y] = transform.forward(value);
+    }
+
+    vec pbackground_transformed = pbackground;
+    vec pobs_transformed = pobs;
+    vec pratios(nS);
+    for(int s = 0; s < nS; s++) {
+        float value = pbackground_transformed[s];
+        if(gridpp::is_valid(value))
+            pbackground_transformed[s] = transform.forward(value);
+
+        value = pobs_transformed[s];
+        if(gridpp::is_valid(value))
+            pobs_transformed[s] = transform.forward(value);
+
+        pratios[s] = psigmas[s] * psigmas[s] / bsigma / bsigma;
+    }
+
+    vec analysis = optimal_interpolation(bpoints, background_transformed, points, pobs_transformed, pratios, pbackground_transformed, structure, max_points);
+
+    // Transform the background
+    // #pragma omp parallel for
+    for(int y = 0; y < nY; y++) {
+        float value = analysis[y];
+        if(gridpp::is_valid(value))
+            analysis[y] = transform.backward(value);
+    }
+
+    return analysis;
+}
 vec2 gridpp::optimal_interpolation_transform(const gridpp::Grid& bgrid,
         const vec2& background,
         float bsigma,
         const gridpp::Points& points,
         const vec& pobs,
-        const vec& psigma,
+        const vec& psigmas,
         const vec& pbackground,
         const gridpp::StructureFunction& structure,
         int max_points,
@@ -284,7 +358,7 @@ vec2 gridpp::optimal_interpolation_transform(const gridpp::Grid& bgrid,
         if(gridpp::is_valid(value))
             pobs_transformed[s] = transform.forward(value);
 
-        pratios[s] = psigma[s] * psigma[s] / bsigma / bsigma;
+        pratios[s] = psigmas[s] * psigmas[s] / bsigma / bsigma;
     }
 
     vec2 analysis = optimal_interpolation(bgrid, background_transformed, points, pobs_transformed, pratios, pbackground_transformed, structure, max_points);

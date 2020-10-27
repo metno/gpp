@@ -150,11 +150,23 @@ namespace gridpp {
             float bsigma,
             const Points& points,
             const vec& pobs,
-            const vec& psigma,
+            const vec& psigmas,
             const vec& pbackground,
             const StructureFunction& structure,
             int max_points,
             const Transform& transform);
+
+    vec optimal_interpolation_transform(const Points& bpoints,
+            const vec& background,
+            float bsigma,
+            const Points& points,
+            const vec& pobs,
+            const vec& psigmas,
+            const vec& pbackground,
+            const StructureFunction& structure,
+            int max_points,
+            const Transform& transform,
+            float cross_validation_distance=MV);
 
     /** Optimal interpolation using a structure function based on an ensemble 
       * See Lussana et al 2019 (DOI: 10.1002/qj.3646)
