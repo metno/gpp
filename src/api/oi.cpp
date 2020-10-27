@@ -174,7 +174,7 @@ vec gridpp::optimal_interpolation(const gridpp::Points& bpoints,
             int index = lLocIndices0[i];
             Point p1(plats[index], plons[index], pelevs[index], plafs[index], coordinate_type);
             Point p2(lat, lon, elev, laf, coordinate_type);
-            float rho = structure.corr(p1, p2);
+            float rho = structure.corr_background(p1, p2);
             if(rho > 0) {
                 lRhos0.push_back(std::pair<float,int>(rho, i));
             }

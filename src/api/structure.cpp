@@ -8,6 +8,9 @@ gridpp::StructureFunction::StructureFunction(float localization_distance) {
 
     mLocalizationDistance = localization_distance;
 }
+float gridpp::StructureFunction::corr_background(const Point& p1, const Point& p2) const {
+    return corr(p1, p2);
+}
 float gridpp::StructureFunction::barnes_rho(float dist, float length) const {
     if(!gridpp::is_valid(length) || length == 0)
         // Disabled
@@ -99,10 +102,13 @@ gridpp::CrossValidation::CrossValidation(StructureFunction& structure, float dis
     m_dist = dist;
 }
 float gridpp::CrossValidation::corr(const Point& p1, const Point& p2) const {
-    float hdist = gridpp::KDTree::calc_distance_fast(p1, p2);
-    if(hdist <= m_dist)
-        return 0;
     return m_structure->corr(p1, p2);
+}
+float gridpp::CrossValidation::corr_background(const Point& p1, const Point& p2) const {
+    float hdist = gridpp::KDTree::calc_distance_fast(p1, p2);
+    if(m_dist > 0 && hdist < m_dist)
+        return 0;
+    return m_structure->corr_background(p1, p2);
 }
 gridpp::StructureFunction* gridpp::CrossValidation::clone() const {
     gridpp::StructureFunction* val = new gridpp::CrossValidation(*m_structure);

@@ -741,6 +741,7 @@ namespace gridpp {
             StructureFunction(float localization_distance);
             /** Correlation between two points */
             virtual float corr(const Point& p1, const Point& p2) const = 0;
+            virtual float corr_background(const Point& p1, const Point& p2) const;
             /** Maximum distance for which an observation can have an impact (localization)
               * @return Distance [m]
             */
@@ -784,6 +785,7 @@ namespace gridpp {
         public:
             CrossValidation(StructureFunction& structure, float dist=0);
             float corr(const Point& p1, const Point& p2) const;
+            float corr_background(const Point& p1, const Point& p2) const;
             StructureFunction* clone() const;
         private:
             StructureFunction* m_structure;
