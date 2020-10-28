@@ -197,7 +197,7 @@ vec2 gridpp::optimal_interpolation_ensi(const gridpp::Points& bpoints,
             int index = lLocIndices0[i];
             Point p1(plats[index], plons[index], pelevs[index], plafs[index]);
             Point p2(lat, lon, elev, laf);
-            float rho = structure.corr(p1, p2);
+            float rho = structure.corr_background(p1, p2);
             if(rho > 0) {
                 lRhos0.push_back(std::pair<float,int>(rho, i));
             }
