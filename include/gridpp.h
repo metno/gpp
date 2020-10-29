@@ -572,6 +572,21 @@ namespace gridpp {
      * */
     vec wind_speed(const vec& xwind, const vec& ywind);
 
+    /** Diagnose wind direction from its components. If both xwind and ywind are 0, then direction
+     *  is 180
+     *  @param xwind X-component of wind [any unit]
+     *  @param ywind Y-component of wind [any unit]
+     *  @return Wind direction [degrees]
+     * */
+    float wind_direction(float xwind, float ywind);
+
+    /** Vector version of wind direction calculation
+     *  @param xwind X-components of wind [any unit]
+     *  @param ywind Y-components of wind [any unit]
+     *  @return Wind direction [degrees]
+     * */
+    vec wind_direction(const vec& xwind, const vec& ywind);
+
     /**@}*/
 
     /** ****************************************

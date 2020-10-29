@@ -11,7 +11,7 @@ def memory_usage():
     return process.memory_info().rss
 
 
-class SwigTest(unittest.TestCase):
+class Test(unittest.TestCase):
     def test_int_output(self):
         """Checks if ints are passed back
         """
