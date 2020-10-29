@@ -741,7 +741,16 @@ namespace gridpp {
             float localization_distance() const;
             virtual StructureFunction* clone() const = 0;
         protected:
+            /** Barnes correlation function
+              * @param dist Distance between points. Same units as 'length'
+              * @param length Length scale
+            */
             float barnes_rho(float dist, float length) const;
+
+            /** Cressman correlation function
+              * @param dist Distance between points. Same units as 'length'
+              * @param length Length scale
+            */
             float cressman_rho(float dist, float length) const;
             float mLocalizationDistance;
     };
@@ -749,10 +758,10 @@ namespace gridpp {
     class BarnesStructure: public StructureFunction {
         public:
             /** Exponential structure function
-              * @param h: Horizontal decorrelation length [m]
-              * @param v: Vertical decorrelation length [m]. If 0, disable decorrelation.
-              * @param w: Land/sea decorrelation length [1]. If 0, disable decorrelation.
-              * @param hmax: Truncate horizontal correlation at this length [m]. If undefined, 3.64 * h.
+              * @param h: Horizontal decorrelation length >=0 [m]
+              * @param v: Vertical decorrelation length >=0 [m]. If 0, disable decorrelation.
+              * @param w: Land/sea decorrelation length >=0 [1]. If 0, disable decorrelation.
+              * @param hmax: Truncate horizontal correlation beyond this length [m]. If undefined, 3.64 * h.
             */
             BarnesStructure(float h, float v=0, float w=0, float hmax=MV);
             float corr(const Point& p1, const Point& p2) const;

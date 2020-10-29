@@ -4,7 +4,7 @@ using namespace gridpp;
 
 gridpp::StructureFunction::StructureFunction(float localization_distance) {
     if(!gridpp::is_valid(localization_distance) || localization_distance < 0)
-        throw std::invalid_argument("Invalid 'localization_distance' in structure");
+        throw std::invalid_argument("Invalid 'h' in structure");
 
     mLocalizationDistance = localization_distance;
 }
@@ -26,6 +26,8 @@ float gridpp::StructureFunction::cressman_rho(float dist, float length) const {
         return 1;
     if(!gridpp::is_valid(dist))
         return 0;
+    if(dist >= length)
+        return 0;
     return (length * length - dist * dist) / (length * length + dist * dist);
 }
 float gridpp::StructureFunction::localization_distance() const {
@@ -35,9 +37,12 @@ float gridpp::StructureFunction::localization_distance() const {
 /** Barnes */
 gridpp::BarnesStructure::BarnesStructure(float h, float v, float w, float hmax) :
     gridpp::StructureFunction(h) {
-    if(hmax < 0) {
+    if(gridpp::is_valid(hmax) && hmax < 0)
         throw std::invalid_argument("hmax must be >= 0");
-    }
+    if(!gridpp::is_valid(v) || v < 0)
+        throw std::invalid_argument("v must be >= 0");
+    if(!gridpp::is_valid(w) || w < 0)
+        throw std::invalid_argument("w must be >= 0");
     if(gridpp::is_valid(hmax))
         mLocalizationDistance = hmax;
     else {
@@ -72,6 +77,10 @@ gridpp::StructureFunction* gridpp::BarnesStructure::clone() const {
 /** Cressman */
 gridpp::CressmanStructure::CressmanStructure(float h, float v, float w) :
     gridpp::StructureFunction(h) {
+    if(!gridpp::is_valid(v) || v < 0)
+        throw std::invalid_argument("v must be >= 0");
+    if(!gridpp::is_valid(w) || w < 0)
+        throw std::invalid_argument("w must be >= 0");
     mH = h;
     mV = v;
     mW = w;
@@ -97,6 +106,8 @@ gridpp::StructureFunction* gridpp::CressmanStructure::clone() const {
 /** CrossValidation */
 gridpp::CrossValidation::CrossValidation(StructureFunction& structure, float dist) :
         StructureFunction(0){
+    if(!gridpp::is_valid(dist) || dist < 0)
+        throw std::invalid_argument("Invalid 'dist' in CrossValidation structure");
     mLocalizationDistance = structure.localization_distance();
     m_structure = structure.clone();
     m_dist = dist;
