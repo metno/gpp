@@ -3,7 +3,25 @@
 using namespace gridpp;
 
 vec2 gridpp::quantile_mapping_curve(const vec& ref, const vec& fcst, vec quantiles) {
+    if(ref.size() != fcst.size())
+        throw std::invalid_argument("ref and fcst must be of the same size");
+
+    if(quantiles.size() > 0) {
+        for(int i = 0; i < quantiles.size(); i++) {
+            float curr = quantiles[i];
+            if(!gridpp::is_valid(curr) || curr > 1 || curr < 0)
+                throw std::invalid_argument("Quantiles must be >= 0 and <= 1");
+        }
+    }
     vec2 curve(2);
+    if(ref.size() == 0)
+        return curve;
+    else if(ref.size() == 1) {
+        curve[0] = fcst;
+        curve[1] = ref;
+        return curve;
+    }
+
     vec ref_sort = ref;
     std::sort(ref_sort.begin(), ref_sort.end());
     vec fcst_sort = fcst;
