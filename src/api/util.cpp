@@ -298,9 +298,6 @@ float gridpp::interpolate(float x, const std::vector<float>& iX, const std::vect
 
     return y;
 }
-void gridpp::not_implemented_error() {
-    gridpp::error("Not implemented");
-}
 bool gridpp::compatible_size(const Grid& grid, const vec2& v) {
     return v.size() == 0 || grid.size()[0] != v.size() || grid.size()[1] != v[0].size();
 }

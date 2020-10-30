@@ -42,6 +42,10 @@
         std::string s(e.what());
         SWIG_exception(SWIG_ValueError, s.c_str());
     }
+    catch (gridpp::not_implemented_exception &e) {
+        std::string s(e.what());
+        SWIG_exception(SWIG_RuntimeError, s.c_str());
+    }
     catch (std::exception &e) {
         std::string s(e.what());
         SWIG_exception(SWIG_RuntimeError, s.c_str());

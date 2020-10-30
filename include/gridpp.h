@@ -9,6 +9,7 @@
 #ifdef _OPENMP
     #include <omp.h>
 #endif
+#include <exception>
 
 #define GRIDPP_VERSION "0.5.0a2"
 #define __version__ GRIDPP_VERSION
@@ -648,7 +649,6 @@ namespace gridpp {
      *  @return Y value corresponding to x
     */
     float interpolate(float x, const std::vector<float>& iX, const std::vector<float>& iY);
-    void not_implemented_error();
 
     /** Initialize a vector of size Y, X, with a given value */
     ivec2 init_ivec2(int Y, int X, int value);
@@ -720,6 +720,8 @@ namespace gridpp {
     float test_vec_argout(vec& distances);
     /** Testing function for 2D vector treated as output */
     float test_vec2_argout(vec2& distances);
+
+    void test_not_implemented_exception();
 
     /** Default value used to fill array in SWIG testing functions. Not useful for any other purpose. */
     static const float swig_default_value = -1;
@@ -1014,6 +1016,11 @@ namespace gridpp {
             vec2 mLons;
             vec2 mElevs;
             vec2 mLafs;
+    };
+    class not_implemented_exception: public std::logic_error
+    {
+        public:
+            not_implemented_exception() : std::logic_error("Function not yet implemented") { };
     };
 };
 #endif

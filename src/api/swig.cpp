@@ -95,3 +95,6 @@ float gridpp::test_vec2_argout(vec2& distances) {
         distances[i].resize(10, swig_default_value);
     return 0;
 }
+void gridpp::test_not_implemented_exception() {
+    throw gridpp::not_implemented_exception();
+}

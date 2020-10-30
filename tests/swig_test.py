@@ -112,6 +112,10 @@ class Test(unittest.TestCase):
         self.assertEqual(0, gridpp.test_vec3_input(np.zeros([0, 3, 0])))
         self.assertEqual(0, gridpp.test_vec3_input(np.zeros([3, 0, 0])))
 
+    def test_not_implemented_exception(self):
+        with self.assertRaises(Exception) as e:
+            gridpp.test_not_implemented_exception()
+
 
 if __name__ == '__main__':
     unittest.main()
