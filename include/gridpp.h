@@ -11,7 +11,7 @@
 #endif
 #include <exception>
 
-#define GRIDPP_VERSION "0.5.0a2"
+#define GRIDPP_VERSION "0.5.0"
 #define __version__ GRIDPP_VERSION
 
 namespace gridpp {
@@ -353,8 +353,6 @@ namespace gridpp {
     float calc_score(float a, float b, float c, float d, Metric metric);
     float calc_score(const vec& ref, const vec& fcst, float threshold, Metric metric);
     float calc_score(const vec& ref, const vec& fcst, float threshold, float fthreshold, Metric metric);
-
-    void advection_implicit(const vec2& y_dist, const vec2& x_dist, float dt, ivec2& y_coord, ivec2& x_coord);
 
     vec2 correction(const Grid& rgrid, const vec2& rvalues, const Points& npoints, const vec& nvalues, float mean_radius, float outer_radius, float inner_radius, int min_num, int max_num, CorrectionType type, ivec2& count);
     // Apply correction based on multiple timesteps
