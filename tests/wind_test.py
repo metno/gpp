@@ -2,13 +2,7 @@ from __future__ import print_function
 import unittest
 import gridpp
 import numpy as np
-import psutil
 import os
-
-
-def memory_usage():
-    process = psutil.Process(os.getpid())
-    return process.memory_info().rss
 
 
 class Test(unittest.TestCase):

@@ -5,9 +5,6 @@ import numpy as np
 
 
 class Test(unittest.TestCase):
-    """ Check if OI for a single observation works Put an obs at 2500m and background at 0, 2500,
-    10000 m
-    """
     def test_simple_1d(self):
         N = 3
         y = [[0, 0, 0]]
@@ -22,6 +19,53 @@ class Test(unittest.TestCase):
         max_points = 10
         output = gridpp.optimal_interpolation(grid, background, points, pobs, pratios, pbackground, structure, max_points)
         np.testing.assert_array_almost_equal(output, np.array([[np.exp(-0.5)/1.1, 1/1.1, np.exp(-0.5*9)/1.1]]))
+
+    def test_cross_validation(self):
+        y = np.array([0, 1000, 2000, 3000])
+        N = len(y)
+        obs = np.array([0, 1, 2, 3])
+        background = np.zeros(N)
+        points = gridpp.Points(y, np.zeros(N), np.zeros(N), np.zeros(N), gridpp.Cartesian)
+        ratios = np.ones(N)
+        Icv = [0, 2, 3]
+        points_cv = gridpp.Points(y[Icv], np.zeros(N-1), np.zeros(N-1), np.zeros(N-1), gridpp.Cartesian)
+        structure = gridpp.BarnesStructure(1000, 0)
+        structure_cv = gridpp.CrossValidation(structure, 750)
+
+        analysis = gridpp.optimal_interpolation(points, background, points_cv, obs[Icv], ratios[Icv], background[Icv], structure, 100)
+        analysis_cv = gridpp.optimal_interpolation(points, background, points, obs, ratios, background, structure_cv, 100)
+        # print(analysis, analysis_cv)
+
+    def test_cross_validation_grid(self):
+        """ Check that the CV structure function works """
+        np.random.seed(1000)
+        y, x = np.meshgrid(np.arange(0, 3500, 500), np.arange(0, 3500, 500))
+        Y = y.shape[0]
+        X = y.shape[1]
+        grid = gridpp.Grid(y, x, np.zeros(x.shape), np.zeros(x.shape), gridpp.Cartesian)
+        background = np.random.rand(Y, X) * 0
+
+        obs = np.array([10, 20, 30])
+        x_o = np.array([1000, 2000, 3000])
+        y_o = np.array([1000, 2000, 3000])
+        N = len(obs)
+        points = gridpp.Points(y_o, x_o, np.zeros(N), np.zeros(N), gridpp.Cartesian)
+
+        background_o = gridpp.nearest(grid, points, background)
+
+        ratios = np.ones(N)
+        k = 0
+        ii = np.arange(N).astype('int') != k
+        points_cv = gridpp.Points(y_o[ii], x_o[ii], np.zeros(N-1), np.zeros(N-1), gridpp.Cartesian)
+        structure = gridpp.BarnesStructure(1000, 0)
+        structure_cv = gridpp.CrossValidation(structure, 750)
+
+        analysis = gridpp.optimal_interpolation(grid, background, points_cv, obs[ii], ratios[ii],
+                background_o[ii], structure, 100)
+        analysis_cv = gridpp.optimal_interpolation(points, background_o, points, obs, ratios,
+                background_o, structure_cv, 100)
+
+        self.assertAlmostEqual(gridpp.nearest(grid, points, analysis)[k], analysis_cv[k])
 
 
 if __name__ == '__main__':

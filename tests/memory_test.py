@@ -2,8 +2,8 @@ from __future__ import print_function
 import unittest
 import gridpp
 import numpy as np
-import psutil
 import os
+# import psutil
 
 
 def memory_usage():

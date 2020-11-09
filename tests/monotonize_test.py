@@ -4,7 +4,6 @@ import gridpp
 import time
 import numpy as np
 import sys
-import matplotlib.pylab as mpl
 
 class MonotonizeTest(unittest.TestCase):
     def test_empty_input(self):

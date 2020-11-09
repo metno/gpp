@@ -1,6 +1,7 @@
 # Gridded post-processor
 
-[!["Latest release"](https://img.shields.io/github/v/release/metno/gridpp.svg)](https://github.com/metno/gridpp/releases) [![Build](https://travis-ci.org/metno/gridpp.svg?branch=master)](https://travis-ci.org/metno/gridpp)
+[!["Latest release"](https://img.shields.io/github/v/release/metno/gridpp.svg)](https://github.com/metno/gridpp/releases)
+[![C/C++ CI](https://github.com/metno/gridpp/workflows/C/C++%20CI/badge.svg)](https://github.com/metno/gridpp/actions)
 
 Gridpp a is post-processing tool for gridded weather forecasts. It consists of a **library** of commonly-used methods and a **command-line tool** that applies these methods to forecast fields in NetCDF files.
 

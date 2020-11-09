@@ -23,7 +23,7 @@ class Test(unittest.TestCase):
     def test_invalid_arguments(self):
         field = np.ones([5, 5])
         halfwidth = -1
-        quantiles = [-0.1, 1.1, np.nan, np.inf]
+        quantiles = [-0.1, 1.1, np.nan]
 
         for quantile in quantiles:
             with self.assertRaises(ValueError) as e:

@@ -24,7 +24,7 @@ class Test(unittest.TestCase):
         """Check that exception is thrown for invalid arguments"""
         field = np.ones([5, 5])
         halfwidth = -1
-        quantiles = [-0.1, 1.1, np.nan, np.inf]
+        quantiles = [-0.1, 1.1, np.nan]
         thresholds = [0, 1]
 
         for quantile in quantiles:

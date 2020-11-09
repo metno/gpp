@@ -1,0 +1,23 @@
+name: C/C++ CI
+
+on: [push]
+
+# push:
+#    branches: [ master ]
+#  pull_request:
+#    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: dependencies
+        run: sudo apt update -qq && sudo apt install swig libboost-dev libarmadillo8 libarmadillo-dev cmake netcdf-bin libnetcdf-dev libgsl-dev python3-setuptools python3-numpy python3-nose
+      - name: configure
+        run: mkdir build && cd build && cmake -DBUILD_R=no ..
+      - name: build
+        run: cd build && VERBOSE=1 make develop-python-user
+      - name: test
+        run: nosetests3

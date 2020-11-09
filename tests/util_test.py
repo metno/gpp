@@ -29,7 +29,6 @@ class Test(unittest.TestCase):
         self.assertTrue(gridpp.is_valid(1))
         self.assertTrue(gridpp.is_valid(-1))
         self.assertTrue(gridpp.is_valid(-999))  # Check that the old missing value indicator is valid now
-        self.assertFalse(gridpp.is_valid(np.inf))
         self.assertFalse(gridpp.is_valid(np.nan))
 
     def test_calc_statistic_mean(self):
@@ -69,11 +68,11 @@ class Test(unittest.TestCase):
         self.assertTrue(np.isnan(quantile_of_nan_list[0]))
 
     def test_num_missing_values(self):
-        self.assertEqual(gridpp.num_missing_values([[0, np.nan, 1, np.inf]]), 2)
-        self.assertEqual(gridpp.num_missing_values([[np.nan, np.inf]]), 2)
+        self.assertEqual(gridpp.num_missing_values([[0, np.nan, 1, np.nan]]), 2)
+        self.assertEqual(gridpp.num_missing_values([[np.nan, np.nan]]), 2)
         self.assertEqual(gridpp.num_missing_values([[0, 0, 1, 1]]), 0)
-        self.assertEqual(gridpp.num_missing_values([[0, np.nan], [1, np.inf]]), 2)
-        self.assertEqual(gridpp.num_missing_values([[np.nan, np.nan], [np.nan, np.inf]]), 4)
+        self.assertEqual(gridpp.num_missing_values([[0, np.nan], [1, np.nan]]), 2)
+        self.assertEqual(gridpp.num_missing_values([[np.nan, np.nan], [np.nan, np.nan]]), 4)
         self.assertEqual(gridpp.num_missing_values([[0, 0], [1, 1]]), 0)
         self.assertEqual(gridpp.num_missing_values([[]]), 0)
 
