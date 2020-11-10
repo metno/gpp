@@ -81,23 +81,33 @@ vec3 gridpp::Transform::backward(const vec3& input) const {
     return output;
 }
 float gridpp::Log::forward(float value) const {
-    return log(value);
+    if(gridpp::is_valid(value))
+        return log(value);
+    else
+        return gridpp::MV;
 }
 float gridpp::Log::backward(float value) const {
-    return exp(value);
+    if(gridpp::is_valid(value))
+        return exp(value);
+    else
+        return gridpp::MV;
 }
 gridpp::BoxCox::BoxCox(float threshold) : mThreshold(threshold) {
 
 }
 float gridpp::BoxCox::forward(float value) const {
-   if(value <= 0)
-      value = 0;
-   if(mThreshold == 0)
-      return log(value);
-   else
-      return (pow(value, mThreshold) - 1) / mThreshold;
+    if(!gridpp::is_valid(value))
+        return gridpp::MV;
+    if(value <= 0)
+        value = 0;
+    if(mThreshold == 0)
+        return log(value);
+    else
+        return (pow(value, mThreshold) - 1) / mThreshold;
 }
 float gridpp::BoxCox::backward(float value) const {
+    if(!gridpp::is_valid(value))
+        return gridpp::MV;
    float rValue = 0;
    if(mThreshold == 0)
       rValue = exp(value);

@@ -67,6 +67,22 @@ class Test(unittest.TestCase):
 
         self.assertAlmostEqual(gridpp.nearest(grid, points, analysis)[k], analysis_cv[k])
 
+    def test_missing_values(self):
+        """Check that missing values are not used in OI"""
+        obs = np.array([1, np.nan, 2, 3, np.nan, np.nan, 4, np.nan])
+        N = len(obs)
+        y = np.arange(0, N*1000, 1000)
+        background = np.zeros(N)
+        points = gridpp.Points(y, np.zeros(N), np.zeros(N), np.zeros(N), gridpp.Cartesian)
+        ratios = np.ones(N)
+        structure = gridpp.BarnesStructure(1000, 0)
+        analysis = gridpp.optimal_interpolation(points, background, points, obs, ratios, background, structure, 100)
+
+        I = np.where(np.isnan(y) == 0)[0]
+        points1 = gridpp.Points(y[I], np.zeros(len(I)), np.zeros(len(I)), np.zeros(len(I)), gridpp.Cartesian)
+        analysis1 = gridpp.optimal_interpolation(points, background, points1, obs[I], ratios[I], background[I], structure, 100)
+        np.testing.assert_array_almost_equal(analysis, analysis1)
+
 
 if __name__ == '__main__':
     unittest.main()

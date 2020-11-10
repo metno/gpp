@@ -33,6 +33,16 @@ class Test(unittest.TestCase):
                 output = transform.backward(a)
                 np.testing.assert_almost_equal(output, i, 5)
 
+    def test_missing_values(self):
+        """ Check that invalid values are transformed properly """
+        transforms = [gridpp.BoxCox(0.1), gridpp.Log()]
+        for transform in transforms:
+            with self.subTest(structure=type(transform)):
+                input = [1, np.nan, 3]
+                output = transform.forward(input)
+                np.testing.assert_equal(np.isnan(output), np.isnan(input))
+                output = transform.backward(output)
+                np.testing.assert_almost_equal(input, output, 5)
 
     def test_log(self):
         transform = gridpp.Log()

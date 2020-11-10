@@ -1,6 +1,0 @@
-debian export-ignore  
-.gitattributes export-ignore  
-.gitignore export-ignore
-build export-ignore
-coverage export-ignore
-.git export-ignore
