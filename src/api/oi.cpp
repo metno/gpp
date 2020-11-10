@@ -37,22 +37,27 @@ vec2 gridpp::optimal_interpolation(const gridpp::Grid& bgrid,
         throw std::invalid_argument("max_points must be >= 0");
 
     if(bgrid.get_coordinate_type() != points.get_coordinate_type()) {
-        throw std::runtime_error("Both background grid and observations points must be of same coordinate type (lat/lon or x/y)");
+        throw std::invalid_argument("Both background grid and observations points must be of same coordinate type (lat/lon or x/y)");
     }
     if(background.size() != bgrid.size()[0] || background[0].size() != bgrid.size()[1]) {
         std::stringstream ss;
         ss << "input field (" << bgrid.size()[0] << "," << bgrid.size()[1] << ") is not the same size as the grid (" << background.size() << "," << background[0].size() << ")";
-        throw std::runtime_error(ss.str());
+        throw std::invalid_argument(ss.str());
     }
     if(pobs.size() != points.size()) {
         std::stringstream ss;
         ss << "Observations (" << pobs.size() << ") and points (" << points.size() << ") size mismatch";
-        throw std::runtime_error(ss.str());
+        throw std::invalid_argument(ss.str());
     }
     if(pratios.size() != points.size()) {
         std::stringstream ss;
         ss << "Ratios (" << pratios.size() << ") and points (" << points.size() << ") size mismatch";
-        throw std::runtime_error(ss.str());
+        throw std::invalid_argument(ss.str());
+    }
+    if(pbackground.size() != points.size()) {
+        std::stringstream ss;
+        ss << "Background (" << pbackground.size() << ") and points (" << points.size() << ") size mismatch";
+        throw std::invalid_argument(ss.str());
     }
 
     int nY = background.size();
@@ -94,22 +99,22 @@ vec gridpp::optimal_interpolation(const gridpp::Points& bpoints,
         throw std::invalid_argument("max_points must be >= 0");
 
     if(bpoints.get_coordinate_type() != points.get_coordinate_type()) {
-        throw std::runtime_error("Both background points and observations points must be of same coordinate type (lat/lon or x/y)");
+        throw std::invalid_argument("Both background points and observations points must be of same coordinate type (lat/lon or x/y)");
     }
     if(background.size() != bpoints.size()) {
         std::stringstream ss;
         ss << "Input field (" << bpoints.size() << ") is not the same size as the grid (" << background.size() << ")";
-        throw std::runtime_error(ss.str());
+        throw std::invalid_argument(ss.str());
     }
     if(pobs.size() != points.size()) {
         std::stringstream ss;
         ss << "Observations (" << pobs.size() << ") and points (" << points.size() << ") size mismatch";
-        throw std::runtime_error(ss.str());
+        throw std::invalid_argument(ss.str());
     }
     if(pratios.size() != points.size()) {
         std::stringstream ss;
         ss << "Ratios (" << pratios.size() << ") and points (" << points.size() << ") size mismatch";
-        throw std::runtime_error(ss.str());
+        throw std::invalid_argument(ss.str());
     }
 
     int nY = background.size();
@@ -244,26 +249,26 @@ vec gridpp::optimal_interpolation_transform(const gridpp::Points& bpoints,
         throw std::invalid_argument("max_points must be >= 0");
 
     if(bpoints.get_coordinate_type() != points.get_coordinate_type()) {
-        throw std::runtime_error("Both background points and observations points must be of same coordinate type (lat/lon or x/y)");
+        throw std::invalid_argument("Both background points and observations points must be of same coordinate type (lat/lon or x/y)");
     }
     if(background.size() != bpoints.size()) {
         std::stringstream ss;
         ss << "Input field (" << bpoints.size() << ") is not the same size as the grid (" << background.size() << ")";
-        throw std::runtime_error(ss.str());
+        throw std::invalid_argument(ss.str());
     }
     if(pobs.size() != points.size()) {
         std::stringstream ss;
         ss << "Observations (" << pobs.size() << ") and points (" << points.size() << ") size mismatch";
-        throw std::runtime_error(ss.str());
+        throw std::invalid_argument(ss.str());
     }
     if(psigmas.size() != points.size()) {
         std::stringstream ss;
         ss << "Sigmas (" << psigmas.size() << ") and points (" << points.size() << ") size mismatch";
-        throw std::runtime_error(ss.str());
+        throw std::invalid_argument(ss.str());
     }
 
     if(bpoints.get_coordinate_type() != points.get_coordinate_type()) {
-        throw std::runtime_error("Both background and observations points must be of same coordinate type (lat/lon or x/y)");
+        throw std::invalid_argument("Both background and observations points must be of same coordinate type (lat/lon or x/y)");
     }
     int nY = background.size();
     int nS = points.size();
@@ -316,7 +321,7 @@ vec2 gridpp::optimal_interpolation_transform(const gridpp::Grid& bgrid,
         const gridpp::Transform& transform) {
 
     if(bgrid.get_coordinate_type() != points.get_coordinate_type()) {
-        throw std::runtime_error("Both background grid and observations points must be of same coordinate type (lat/lon or x/y)");
+        throw std::invalid_argument("Both background grid and observations points must be of same coordinate type (lat/lon or x/y)");
     }
     int nY = background.size();
     int nX = background[0].size();

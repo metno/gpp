@@ -45,22 +45,22 @@ vec3 gridpp::optimal_interpolation_ensi(const gridpp::Grid& bgrid,
         throw std::invalid_argument("max_points must be >= 0");
 
     if(bgrid.get_coordinate_type() != points.get_coordinate_type()) {
-        throw std::runtime_error("Both background grid and observations points must be of same coordinate type (lat/lon or x/y)");
+        throw std::invalid_argument("Both background grid and observations points must be of same coordinate type (lat/lon or x/y)");
     }
     if(background.size() != bgrid.size()[0] || background[0].size() != bgrid.size()[1]) {
         std::stringstream ss;
         ss << "input field (" << bgrid.size()[0] << "," << bgrid.size()[1] << ") is not the same size as the grid (" << background.size() << "," << background[0].size() << ")";
-        throw std::runtime_error(ss.str());
+        throw std::invalid_argument(ss.str());
     }
     if(pobs.size() != points.size()) {
         std::stringstream ss;
         ss << "Observations (" << pobs.size() << ") and points (" << points.size() << ") size mismatch";
-        throw std::runtime_error(ss.str());
+        throw std::invalid_argument(ss.str());
     }
     if(psigmas.size() != points.size()) {
         std::stringstream ss;
         ss << "Sigmas (" << psigmas.size() << ") and points (" << points.size() << ") size mismatch";
-        throw std::runtime_error(ss.str());
+        throw std::invalid_argument(ss.str());
     }
 
     int nY = background.size();
@@ -102,14 +102,16 @@ vec2 gridpp::optimal_interpolation_ensi(const gridpp::Points& bpoints,
     if(max_points < 0)
         throw std::invalid_argument("max_points must be >= 0");
     if(bpoints.get_coordinate_type() != points.get_coordinate_type()) {
-        throw std::runtime_error("Both background and observations points must be of same coorindate type (lat/lon or x/y)");
+        throw std::invalid_argument("Both background and observations points must be of same coorindate type (lat/lon or x/y)");
     }
     if(background.size() != bpoints.size())
-        throw std::runtime_error("Input field is not the same size as the grid");
+        throw std::invalid_argument("Input field is not the same size as the grid");
     if(pobs.size() != points.size())
-        throw std::runtime_error("Observations and points exception mismatch");
+        throw std::invalid_argument("Observations and points exception mismatch");
     if(psigmas.size() != points.size())
-        throw std::runtime_error("Sigmas and points size mismatch");
+        throw std::invalid_argument("Sigmas and points size mismatch");
+    if(pbackground.size() != points.size())
+        throw std::invalid_argument("Background and points size mismatch");
 
     double s_time = gridpp::clock();
     int mX = -1;

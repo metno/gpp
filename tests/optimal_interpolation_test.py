@@ -2,9 +2,46 @@ from __future__ import print_function
 import unittest
 import gridpp
 import numpy as np
+import collections
 
 
 class Test(unittest.TestCase):
+    def test_invalid_arguments(self):
+        """ Check that exception is thrown on invalid input values """
+        ok_args = collections.OrderedDict({
+                'grid' : gridpp.Grid([[0,0,0]], [[0,2500,10000]], [[0,0,0]], [[0,0,0]], gridpp.Cartesian),
+                'background' : np.zeros([1, 3]),
+                'points' : gridpp.Points([0], [2500], [0], [0], gridpp.Cartesian),
+                'pobs' : [1],
+                'pratios' : [0.1],
+                'pbackground' : [0],
+                'structure' : gridpp.BarnesStructure(2500),
+                'max_points' : 10
+        })
+
+        x = np.zeros([3,2])
+        invalid_args = {
+                # Grid size mismatch, and coordinate-type mismatch
+                'grid' : [gridpp.Grid(x, x, x, x, gridpp.Cartesian), gridpp.Grid([[0,0,0]], [[0,2500,10000]])],
+                # Points size mismatch, and coordinate-type mismatch
+                'points' : [gridpp.Points([0, 1], [0, 2500], [0, 0], [0, 0], gridpp.Cartesian), gridpp.Points([0], [2500])],
+                'pratios' : [np.zeros(11)],
+                'pobs' : [np.zeros([11])],
+                'background' : [np.zeros([2, 11])],
+                'pbackground' : [np.zeros(21)],
+                'max_points' : [-1]
+        }
+
+        for key in invalid_args.keys():
+            for arg in invalid_args[key]:
+                args0 = ok_args.copy()
+                args0[key] = arg
+                q = [args0[f] for f in args0]
+                with self.subTest(key=key, arg=arg):
+                    with self.assertRaises(ValueError) as e:
+                        output = gridpp.optimal_interpolation(*q)
+
+
     def test_simple_1d(self):
         N = 3
         y = [[0, 0, 0]]
