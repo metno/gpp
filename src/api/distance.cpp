@@ -5,7 +5,7 @@ using namespace gridpp;
 
 vec gridpp::distance(const Grid& grid, const Points& points, int num) {
     if(grid.get_coordinate_type() != points.get_coordinate_type())
-        throw std::runtime_error("Incompatible coordinate types");
+        throw std::invalid_argument("Incompatible coordinate types");
 
     int size = points.size();
     vec output(size);
@@ -31,7 +31,7 @@ vec gridpp::distance(const Grid& grid, const Points& points, int num) {
 
 vec2 gridpp::distance(const Grid& igrid, const Grid& ogrid, int num) {
     if(igrid.get_coordinate_type() != ogrid.get_coordinate_type())
-        throw std::runtime_error("Incompatible coordinate types");
+        throw std::invalid_argument("Incompatible coordinate types");
 
     ivec size = ogrid.size();
     vec2 output(size[0]);
@@ -60,7 +60,7 @@ vec2 gridpp::distance(const Grid& igrid, const Grid& ogrid, int num) {
 
 vec2 gridpp::distance(const Points& points, const Grid& grid, int num) {
     if(points.get_coordinate_type() != grid.get_coordinate_type())
-        throw std::runtime_error("Incompatible coordinate types");
+        throw std::invalid_argument("Incompatible coordinate types");
 
     ivec size = grid.size();
     vec2 output(size[0]);

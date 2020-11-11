@@ -104,7 +104,7 @@ namespace {
 
 vec2 gridpp::metric_optimizer_curve(const vec& ref, const vec& fcst, const vec& thresholds, gridpp::Metric metric) {
     if(ref.size() != fcst.size())
-        throw std::runtime_error("ref and fcst not the same size");
+        throw std::invalid_argument("ref and fcst not the same size");
 
     int N = thresholds.size();
     vec x(N);

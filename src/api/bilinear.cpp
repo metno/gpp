@@ -74,12 +74,8 @@ namespace {
         // std::cout << "Method 3: Parallelogram" << std::endl;
         float X31 = X3 - X1;
         float X21 = X2 - X1;
-        float Y42 = Y4 - Y2;
         float Y21 = Y2 - Y1;
         float Y31 = Y3 - Y1;
-        float Y43 = Y4 - Y3;
-        float X42 = X4 - X2;
-        float X43 = X4 - X3;
 
         float A = X21;
         float B = X31;

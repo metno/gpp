@@ -4,11 +4,12 @@
 using namespace gridpp;
 
 vec gridpp::apply_curve(const vec& fcst, const vec2& curve, gridpp::Extrapolation policy_below, gridpp::Extrapolation policy_above) {
-    if(curve.size() != 2 || curve[0].size() == 0 || curve[1].size() == 0)
-        throw std::runtime_error("Invalid curve");
-
+    if(curve.size() != 2)
+        throw std::invalid_argument("Curve must have a first dimension size of 2");
+    if(curve[0].size() == 0 || curve[1].size() == 0)
+        throw std::invalid_argument("x and y vectors in curve cannot have size 0");
     if(curve[0].size() != curve[1].size())
-        throw std::runtime_error("x and y vectors in curve not the same size");
+        throw std::invalid_argument("x and y vectors in curve not the same size");
 
     int N = fcst.size();
     int C = curve[0].size();
@@ -80,11 +81,12 @@ vec2 gridpp::apply_curve(const vec2& fcst, const vec2& curve, gridpp::Extrapolat
     return output;
 }
 vec2 gridpp::monotonize_curve(vec2 curve) {
-    if(curve.size() != 2 || curve[0].size() == 0 || curve[1].size() == 0)
-        throw std::runtime_error("Invalid curve");
-
+    if(curve.size() != 2)
+        throw std::invalid_argument("Curve must have a first dimension size of 2");
+    if(curve[0].size() == 0 || curve[1].size() == 0)
+        throw std::invalid_argument("x and y vectors in curve cannot have size 0");
     if(curve[0].size() != curve[1].size())
-        throw std::runtime_error("x and y vectors in curve not the same size");
+        throw std::invalid_argument("x and y vectors in curve not the same size");
 
     bool debug = false;
 
