@@ -383,6 +383,15 @@ namespace gridpp {
     vec nearest(const Grid& igrid, const Points& opoints, const vec2 ivalues);
     vec2 nearest(const Grid& igrid, const Points& opoints, const vec3 ivalues);
 
+    /** Nearest neighbour dowscaling point to point
+      * @param igrid Input points
+      * @param ogrid Output points to downscale to
+      * @param ivalues 2D vector of values on the input grid
+      * @return Values for the output points
+    */
+    vec nearest(const Points& ipoints, const Points& opoints, const vec ivalues);
+    vec2 nearest(const Points& ipoints, const Points& opoints, const vec2 ivalues);
+
     /** Bilinear downscaling grid to grid
       * @param igrid Input grid
       * @param ogrid Output grid to downscale to
@@ -678,6 +687,7 @@ namespace gridpp {
     /** Check if the grid is the same size as the 2D vector */
     bool compatible_size(const Grid& grid, const vec2& v);
     bool compatible_size(const Grid& grid, const vec3& v);
+    bool compatible_size(const Points& points, const vec2& v);
 
     /** Checks if a point is located inside a rectangle formed by 4 points. The 4 points must be
       * provided in an order that draws out a rectangle (either clockwise or counter-clockwise)

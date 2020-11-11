@@ -84,6 +84,23 @@ class Test(unittest.TestCase):
         output = gridpp.nearest(grid, points, values)
         np.testing.assert_array_equal(output, [[0, 4], [9, 13]])
 
+    def test_points_to_points(self):
+        """Check that point to point interpolation works"""
+        ipoints = gridpp.Points([0, 5, 10], [0, 5, 10])
+        points = gridpp.Points([-1, 6], [-1, 6])
+        values = [0, 1, 2]
+        output = gridpp.nearest(ipoints, points, values)
+        np.testing.assert_array_equal(output, [0, 1])
+
+    def test_points_to_points_3d(self):
+        """Check that point to point interpolation for 3D fields works"""
+        ipoints = gridpp.Points([0, 5, 10], [0, 5, 10])
+        points = gridpp.Points([-1, 6], [-1, 6])
+        values = [[0, 1, 2], [9, 6, 1]]
+        output = gridpp.nearest(ipoints, points, values)
+        np.testing.assert_array_equal(output, [[0, 1], [9, 6]])
+
+
 
 if __name__ == '__main__':
     unittest.main()
