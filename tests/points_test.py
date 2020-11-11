@@ -89,6 +89,15 @@ class Test(unittest.TestCase):
             np.testing.assert_array_almost_equal(p.get_elevs(), elevs)
             np.testing.assert_array_almost_equal(p.get_lafs(), lafs)
 
+    def test_get_nearest_neighbour_no_match(self):
+        """Check that an exact match is removed"""
+        points = gridpp.Points([0, 1, 2, 2, 4], [0]*5)
+        self.assertAlmostEqual(points.get_nearest_neighbour(0, 0, False), 1)
+        self.assertAlmostEqual(points.get_nearest_neighbour(0, 0, True), 0)
+        # Check that multiple of identical matches are removed
+        self.assertEqual(points.get_nearest_neighbour(2, 0, False), 1)
+        self.assertTrue(points.get_nearest_neighbour(2, 0, True) in [2, 3])
+
 
 if __name__ == '__main__':
     unittest.main()

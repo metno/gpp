@@ -11,7 +11,7 @@
 #endif
 #include <exception>
 
-#define GRIDPP_VERSION "0.5.0"
+#define GRIDPP_VERSION "0.6.0b1"
 #define __version__ GRIDPP_VERSION
 
 namespace gridpp {
@@ -877,14 +877,14 @@ namespace gridpp {
              *  @param lat Latitude of lookup-point
              *  @param lon Longitude of lookup-point
              * */
-            int get_nearest_neighbour(float lat, float lon) const;
+            int get_nearest_neighbour(float lat, float lon, bool include_match=true) const;
 
             /** Find all points with a radius
              *  @param lat Latitude of lookup-point
              *  @param lon Longitude of lookup-point
              *  @param radius Lookup radius [m]
              * */
-            ivec get_neighbours(float lat, float lon, float radius) const;
+            ivec get_neighbours(float lat, float lon, float radius, bool include_match=true) const;
 
             /** Find all points with a radius
              *  @param lat Latitude of lookup-point
@@ -892,21 +892,21 @@ namespace gridpp {
              *  @param radius Lookup radius [m]
              *  @param distances Vector to store separation distances [m]
              * */
-            ivec get_neighbours_with_distance(float lat, float lon, float radius, vec& distances) const;
+            ivec get_neighbours_with_distance(float lat, float lon, float radius, vec& distances, bool include_match=true) const;
 
             /** Find the number of points within a radius
              *  @param lat Latitude of lookup-point
              *  @param lon Longitude of lookup-point
              *  @param radius Lookup radius [m]
              * */
-            int get_num_neighbours(float lat, float lon, float radius) const;
+            int get_num_neighbours(float lat, float lon, float radius, bool include_match=true) const;
 
             /** Find a set of nearest points
              *  @param lat Latitude of lookup-point
              *  @param lon Longitude of lookup-point
              *  @param num Number of points to find
              * */
-            ivec get_closest_neighbours(float lat, float lon, int num) const;
+            ivec get_closest_neighbours(float lat, float lon, int num, bool include_match=true) const;
 
 
             /** Convert lat/lons to 3D cartesian coordinates with the centre of the earth as the origin
@@ -944,6 +944,22 @@ namespace gridpp {
             vec mLats;
             vec mLons;
             CoordinateType mType;
+
+            struct within_radius {
+                public:
+                    within_radius(point p, float radius);
+                    bool operator()(value const& v) const;
+                private:
+                    float radius;
+                    point p;
+            };
+            struct is_not_equal {
+                public:
+                    is_not_equal(point p);
+                    bool operator()(value const& v) const;
+                private:
+                    point p;
+            };
     };
 
     /** Represents a vector of locations and their metadata */
@@ -962,11 +978,11 @@ namespace gridpp {
             Points& operator=(Points other);
             Points(const Points& other);
             // Returns -1 if there are no neighbours
-            int get_nearest_neighbour(float lat, float lon) const;
-            ivec get_neighbours(float lat, float lon, float radius) const;
-            ivec get_neighbours_with_distance(float lat, float lon, float radius, vec& distances) const;
-            int get_num_neighbours(float lat, float lon, float radius) const;
-            ivec get_closest_neighbours(float lat, float lon, int num) const;
+            int get_nearest_neighbour(float lat, float lon, bool include_match=true) const;
+            ivec get_neighbours(float lat, float lon, float radius, bool include_match=true) const;
+            ivec get_neighbours_with_distance(float lat, float lon, float radius, vec& distances, bool include_match=true) const;
+            int get_num_neighbours(float lat, float lon, float radius, bool include_match=true) const;
+            ivec get_closest_neighbours(float lat, float lon, int num, bool include_match=true) const;
 
             vec get_lats() const;
             vec get_lons() const;
@@ -997,11 +1013,11 @@ namespace gridpp {
              *  @param type: Coordinate type
             */
             Grid(vec2 lats, vec2 lons, vec2 elevs=vec2(), vec2 lafs=vec2(), CoordinateType type=Geodetic);
-            ivec get_nearest_neighbour(float lat, float lon) const;
-            ivec2 get_neighbours(float lat, float lon, float radius) const;
-            ivec2 get_neighbours_with_distance(float lat, float lon, float radius, vec& distances) const;
-            int get_num_neighbours(float lat, float lon, float radius) const;
-            ivec2 get_closest_neighbours(float lat, float lon, int num) const;
+            ivec get_nearest_neighbour(float lat, float lon, bool include_match=true) const;
+            ivec2 get_neighbours(float lat, float lon, float radius, bool include_match=true) const;
+            ivec2 get_neighbours_with_distance(float lat, float lon, float radius, vec& distances, bool include_match=true) const;
+            int get_num_neighbours(float lat, float lon, float radius, bool include_match=true) const;
+            ivec2 get_closest_neighbours(float lat, float lon, int num, bool include_match=true) const;
 
             bool get_box(float lat, float lon, int& Y1_out, int& X1_out, int& Y2_out, int& X2_out) const;
 

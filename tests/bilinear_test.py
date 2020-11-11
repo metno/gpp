@@ -98,7 +98,7 @@ class BilinearTest(unittest.TestCase):
         grid = gridpp.Grid(lats, lons)
         output = gridpp.bilinear(grid, gridpp.Points([0.5], [0.5]), values)[0]
         # TODO: This value has not been confirmed by an independent calculation
-        self.assertAlmostEqual(output, 1.1570623)
+        self.assertAlmostEqual(output, 1.1570623, 5)
 
     def test_with_missing_values(self):
         """Check that nearest neighbour is returned when a missing value is in the box"""

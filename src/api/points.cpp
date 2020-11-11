@@ -37,23 +37,23 @@ gridpp::Points::Points(KDTree tree, vec elevs, vec lafs) {
     mLons = tree.get_lons();
 }
 
-int gridpp::Points::get_num_neighbours(float lat, float lon, float radius) const {
-    return mTree.get_num_neighbours(lat, lon, radius);
+int gridpp::Points::get_num_neighbours(float lat, float lon, float radius, bool include_match) const {
+    return mTree.get_num_neighbours(lat, lon, radius, include_match);
 }
 
-ivec gridpp::Points::get_neighbours_with_distance(float lat, float lon, float radius, vec& distances) const {
-    return mTree.get_neighbours_with_distance(lat, lon, radius, distances);
+ivec gridpp::Points::get_neighbours_with_distance(float lat, float lon, float radius, vec& distances, bool include_match) const {
+    return mTree.get_neighbours_with_distance(lat, lon, radius, distances, include_match);
 }
 
-ivec gridpp::Points::get_neighbours(float lat, float lon, float radius) const {
-    return mTree.get_neighbours(lat, lon, radius);
+ivec gridpp::Points::get_neighbours(float lat, float lon, float radius, bool include_match) const {
+    return mTree.get_neighbours(lat, lon, radius, include_match);
 }
 
-ivec gridpp::Points::get_closest_neighbours(float lat, float lon, int num) const {
-    return mTree.get_closest_neighbours(lat, lon, num);
+ivec gridpp::Points::get_closest_neighbours(float lat, float lon, int num, bool include_match) const {
+    return mTree.get_closest_neighbours(lat, lon, num, include_match);
 }
-int gridpp::Points::get_nearest_neighbour(float lat, float lon) const {
-    ivec I = get_closest_neighbours(lat, lon, 1);
+int gridpp::Points::get_nearest_neighbour(float lat, float lon, bool include_match) const {
+    ivec I = get_closest_neighbours(lat, lon, 1, include_match);
     if(I.size() > 0)
         return I[0];
     else
