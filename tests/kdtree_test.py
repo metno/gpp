@@ -71,6 +71,18 @@ class KDTreeTest(unittest.TestCase):
         # self.assertAlmostEqual(16879114, gridpp.KDTree_calc_distance_fast(60.5,5.25,-84.75,-101.75), delta=100);
         self.assertAlmostEqual(124080.79, gridpp.KDTree_calc_distance_fast(60,10,61,11), delta=100);
 
+    def test_radius_match(self):
+        """Check that points right on the radius edge count as a match"""
+        points = gridpp.Points([0, 1000, 2000], [0, 0, 0], [0, 0, 0], [0, 0, 0], gridpp.Cartesian)
+        I = points.get_neighbours(900, 0, 100)
+        np.testing.assert_array_equal(I, [1])
+        I = points.get_neighbours(900, 0, 99.99)
+        np.testing.assert_array_equal(I, [])
+        I = points.get_neighbours(0, 0, 1000)
+        np.testing.assert_array_equal(I, [0, 1])
+        I = points.get_neighbours(0, 0, 1000, False)
+        np.testing.assert_array_equal(I, [1])
+
 
 if __name__ == '__main__':
     unittest.main()

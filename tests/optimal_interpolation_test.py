@@ -8,6 +8,8 @@ import collections
 class Test(unittest.TestCase):
     def test_invalid_arguments(self):
         """ Check that exception is thrown on invalid input values """
+
+        # Set up struct with valid input arguments
         ok_args = collections.OrderedDict({
                 'grid' : gridpp.Grid([[0,0,0]], [[0,2500,10000]], [[0,0,0]], [[0,0,0]], gridpp.Cartesian),
                 'background' : np.zeros([1, 3]),
@@ -19,6 +21,9 @@ class Test(unittest.TestCase):
                 'max_points' : 10
         })
 
+        # Set up struct with invalid input arguments that will be substituted into ok_args one at a
+        # time in order to look for an exception being raised. Use an array of different invalid
+        # arguments for each key.
         x = np.zeros([3,2])
         invalid_args = {
                 # Grid size mismatch, and coordinate-type mismatch
