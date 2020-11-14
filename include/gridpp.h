@@ -1008,12 +1008,14 @@ namespace gridpp {
             ivec get_in_domain_indices(const Grid& grid) const;
             Points get_in_domain(const Grid& grid) const;
             CoordinateType get_coordinate_type() const;
+            Point get_point(int index) const;
         private:
             KDTree mTree;
             vec mLats;
             vec mLons;
             vec mElevs;
             vec mLafs;
+            CoordinateType mType;
     };
 
     /** Represents a 2D grid of locations and their metadata */
@@ -1046,6 +1048,7 @@ namespace gridpp {
             vec2 get_lafs() const;
             ivec size() const;
             CoordinateType get_coordinate_type() const;
+            Point get_point(int y_index, int x_index) const;
         private:
             KDTree mTree;
             int mX;
@@ -1056,6 +1059,7 @@ namespace gridpp {
             vec2 mLons;
             vec2 mElevs;
             vec2 mLafs;
+            CoordinateType mType;
     };
     class not_implemented_exception: public std::logic_error
     {

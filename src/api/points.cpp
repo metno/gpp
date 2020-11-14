@@ -28,6 +28,7 @@ gridpp::Points::Points(vec lats, vec lons, vec elevs, vec lafs, CoordinateType t
         mLafs.clear();
         mLafs.resize(N, gridpp::MV);
     }
+    mType = type;
 }
 gridpp::Points::Points(KDTree tree, vec elevs, vec lafs) {
     mElevs = elevs;
@@ -124,4 +125,7 @@ gridpp::Points::Points(const gridpp::Points& other) {
 }
 CoordinateType gridpp::Points::get_coordinate_type() const {
     return mTree.get_coordinate_type();
+}
+gridpp::Point gridpp::Points::get_point(int index) const {
+    return Point(mLats[index], mLons[index], mElevs[index], mLafs[index], mType);
 }

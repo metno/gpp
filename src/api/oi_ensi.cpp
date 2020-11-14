@@ -182,6 +182,7 @@ vec2 gridpp::optimal_interpolation_ensi(const gridpp::Points& bpoints,
         float lon = blons[y];
         float elev = belevs[y];
         float laf = blafs[y];
+        Point p1 = bpoints.get_point(y);
 
         // Create list of locations for this gridpoint
         ivec lLocIndices0 = points.get_neighbours(lat, lon, localizationRadius);
@@ -197,8 +198,7 @@ vec2 gridpp::optimal_interpolation_ensi(const gridpp::Points& bpoints,
         lRhos0.reserve(lLocIndices0.size());
         for(int i = 0; i < lLocIndices0.size(); i++) {
             int index = lLocIndices0[i];
-            Point p1(plats[index], plons[index], pelevs[index], plafs[index]);
-            Point p2(lat, lon, elev, laf);
+            Point p2 = points.get_point(index);
             float rho = structure.corr_background(p1, p2);
             if(rho > 0) {
                 lRhos0.push_back(std::pair<float,int>(rho, i));

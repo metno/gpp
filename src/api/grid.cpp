@@ -43,6 +43,7 @@ gridpp::Grid::Grid(vec2 lats, vec2 lons, vec2 elevs, vec2 lafs, CoordinateType t
             mLafs[i].resize(lats[0].size(), gridpp::MV);
         }
     }
+    mType = type;
 }
 
 int gridpp::Grid::get_num_neighbours(float lat, float lon, float radius, bool include_match) const {
@@ -219,4 +220,7 @@ bool gridpp::Grid::get_box(float lat, float lon, int& Y1, int& X1, int& Y2, int&
         Y2 = Y;
     }
     return true;
+}
+gridpp::Point gridpp::Grid::get_point(int y_index, int x_index) const {
+    return Point(mLats[y_index][x_index], mLons[y_index][x_index], mElevs[y_index][x_index], mLafs[y_index][x_index], mType);
 }

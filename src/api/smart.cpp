@@ -36,11 +36,11 @@ vec2 gridpp::smart(const Grid& igrid, const Grid& ogrid, const vec2& ivalues, in
             ivec2 indices = igrid.get_neighbours(olats[i][j], olons[i][j], dist);
             std::vector<std::pair<float,int> > rhos;
             rhos.reserve(indices.size());
-            gridpp::Point p1(olats[i][j], olons[i][j], oelevs[i][j], olafs[i][j]);
+            Point p1 = ogrid.get_point(i, j);
             for(int s = 0; s < indices.size(); s++) {
                 int ii = indices[s][0];
                 int jj = indices[s][1];
-                gridpp::Point p2(ilats[ii][jj], ilons[ii][jj], ielevs[ii][jj], ilafs[ii][jj]);
+                Point p2 = igrid.get_point(ii, jj);
                 float rho = structure.corr(p1, p2);
                 rhos.push_back(std::pair<float,int>(rho, s));
             }
