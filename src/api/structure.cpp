@@ -33,6 +33,28 @@ float gridpp::StructureFunction::cressman_rho(float dist, float length) const {
 float gridpp::StructureFunction::localization_distance() const {
     return mLocalizationDistance;
 }
+gridpp::MultipleStructure::MultipleStructure(const StructureFunction& structure_h, const StructureFunction& structure_v, const StructureFunction& structure_w):
+    gridpp::StructureFunction(structure_h.localization_distance()) {
+    m_structure_h = structure_h.clone();
+    m_structure_v = structure_v.clone();
+    m_structure_w = structure_w.clone();
+}
+float gridpp::MultipleStructure::corr(const Point& p1, const Point& p2) const {
+    Point p1_h(p1.lat, p1.lon, p1.elev, p1.laf, p1.type);
+    Point p2_h(p2.lat, p2.lon, p1.elev, p1.laf, p1.type);
+    Point p1_v(p1.lat, p1.lon, p1.elev, p1.laf, p1.type);
+    Point p2_v(p1.lat, p1.lon, p2.elev, p1.laf, p1.type);
+    Point p1_w(p1.lat, p1.lon, p1.elev, p1.laf, p1.type);
+    Point p2_w(p1.lat, p1.lon, p1.elev, p2.laf, p1.type);
+    float corr_h = m_structure_h->corr(p1_h, p2_h);
+    float corr_v = m_structure_v->corr(p1_v, p2_v);
+    float corr_w = m_structure_w->corr(p1_w, p2_w);
+    return corr_h * corr_v * corr_w;
+}
+gridpp::StructureFunction* gridpp::MultipleStructure::clone() const {
+    gridpp::StructureFunction* val = new gridpp::MultipleStructure(*m_structure_h, *m_structure_v, *m_structure_w);
+    return val;
+}
 
 /** Barnes */
 gridpp::BarnesStructure::BarnesStructure(float h, float v, float w, float hmax) :

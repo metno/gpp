@@ -779,6 +779,22 @@ namespace gridpp {
             float cressman_rho(float dist, float length) const;
             float mLocalizationDistance;
     };
+    class MultipleStructure: public StructureFunction {
+        public:
+            /** Exponential structure function
+              * @param h: Horizontal decorrelation length >=0 [m]
+              * @param v: Vertical decorrelation length >=0 [m]. If 0, disable decorrelation.
+              * @param w: Land/sea decorrelation length >=0 [1]. If 0, disable decorrelation.
+              * @param hmax: Truncate horizontal correlation beyond this length [m]. If undefined, 3.64 * h.
+            */
+            MultipleStructure(const StructureFunction& structure_h, const StructureFunction& structure_v, const StructureFunction& structure_w);
+            float corr(const Point& p1, const Point& p2) const;
+            StructureFunction* clone() const;
+        private:
+            StructureFunction* m_structure_h;
+            StructureFunction* m_structure_v;
+            StructureFunction* m_structure_w;
+    };
     /** Simple structure function based on distance, elevation, and land area fraction */
     class BarnesStructure: public StructureFunction {
         public:
