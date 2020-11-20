@@ -408,8 +408,11 @@ namespace gridpp {
     */
     vec bilinear(const Grid& igrid, const Points& opoints, const vec2 ivalues);
 
-    vec2 simple_gradient(const Grid& igrid, const Grid& ogrid, const vec2 ivalues, float elev_gradient);
-    vec simple_gradient(const Grid& igrid, const Points& opoints, const vec2 ivalues, float elev_gradient);
+    vec2 simple_gradient(const Grid& igrid, const Grid& ogrid, const vec2& ivalues, float elev_gradient);
+    vec3 simple_gradient(const Grid& igrid, const Grid& ogrid, const vec3& ivalues, float elev_gradient);
+
+    vec simple_gradient(const Grid& igrid, const Points& opoints, const vec2& ivalues, float elev_gradient);
+    vec2 simple_gradient(const Grid& igrid, const Points& opoints, const vec3& ivalues, float elev_gradient);
 
     /** Smart neighbour downscaling grid to grid
       * @param igrid Input grid

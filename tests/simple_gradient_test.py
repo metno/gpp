@@ -56,7 +56,7 @@ class Test(unittest.TestCase):
             output = gridpp.simple_gradient(grid, points0, values, gradient)
             np.testing.assert_array_almost_equal(output, [np.nan, np.nan])
 
-    def test_1(self):
+    def test_point_to_point(self):
         values = np.zeros([3, 3])
         values[0, 0] = 4
         values[1, 1] = 3
@@ -69,6 +69,19 @@ class Test(unittest.TestCase):
         gradient = 1
         output = gridpp.simple_gradient(grid, points, values, gradient)
         np.testing.assert_array_almost_equal(output, [9, -2])
+
+    def test_point_to_point_3d(self):
+        values = np.zeros([2, 3, 3])
+        values[:, 0, 0] = 4
+        values[:, 1, 1] = 3
+        gradient = 0
+        output = gridpp.simple_gradient(grid, points, values, gradient)
+        np.testing.assert_array_almost_equal(output, [[4, 3], [4, 3]])
+
+        gradient = 1
+        output = gridpp.simple_gradient(grid, points, values, gradient)
+        np.testing.assert_array_almost_equal(output, [[9, -2], [9, -2]])
+
 
     def test_grid_to_grid(self):
 
@@ -91,6 +104,19 @@ class Test(unittest.TestCase):
         #   0 -> 6,   0 -> 7, 10 -> 8
         np.testing.assert_array_almost_equal(output, [[14, 15, 2], [17, 18, 5], [6, 7, 1]])
 
+    def test_3d(self):
+        values = np.zeros([2, 3, 3])
+        values[:, 0, 0] = 4
+        values[:, 1, 1] = 3
+        lats0, lons0 = np.meshgrid([-0.1, 0.1, 1.1], [-0.1, 0.1, 1.1])
+        elevs0 = np.reshape(np.arange(9), [3, 3])
+        grid0 = gridpp.Grid(lats0, lons0, elevs0)
+
+        gradient = 1
+        output = gridpp.simple_gradient(grid, grid0, values, gradient)
+        expected = [[14, 15, 2], [17, 18, 5], [6, 7, 1]]
+        expected = [expected, expected]
+        np.testing.assert_array_almost_equal(output, expected)
 
 
 if __name__ == '__main__':
