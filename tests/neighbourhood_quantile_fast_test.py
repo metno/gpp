@@ -94,6 +94,17 @@ class Test(unittest.TestCase):
             output_3d = gridpp.neighbourhood_quantile_fast(values3, quantile, halfwidth, thresholds)
             np.testing.assert_array_almost_equal(output_2d, output_3d)
 
+    def test_varying_quantile(self):
+        """ For now check that this runs """
+        values = np.array([[0, 1], [2, 3], [4, 5]])
+        halfwidth = 1
+        quantiles = np.ones(values.shape) * 0.5
+        thresholds = [0, 0.25, 0.5, 0.75, 1]
+        gridpp.neighbourhood_quantile_fast(values, quantiles, halfwidth, thresholds)
+
+        values = np.nan *np.zeros(values.shape)
+        np.testing.assert_array_equal(values, gridpp.neighbourhood_quantile_fast(values, quantiles, halfwidth, thresholds))
+
 
 if __name__ == '__main__':
     unittest.main()
