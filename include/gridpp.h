@@ -1015,7 +1015,6 @@ namespace gridpp {
             vec mLons;
             vec mElevs;
             vec mLafs;
-            CoordinateType mType;
     };
 
     /** Represents a 2D grid of locations and their metadata */
@@ -1059,7 +1058,6 @@ namespace gridpp {
             vec2 mLons;
             vec2 mElevs;
             vec2 mLafs;
-            CoordinateType mType;
     };
     class not_implemented_exception: public std::logic_error
     {
