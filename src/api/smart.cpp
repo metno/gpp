@@ -118,7 +118,7 @@ def get_smart_neighbour(const Grid& grid, float lat, float lon, float altitude, 
             for(int jj = std::max(0, Jc-mRadius); jj <= std::min(iFrom.getNumX()-1, Jc+mRadius); jj++) {
                 float ielev = ielevs[ii][jj];
                 float diff = 1e10;
-                if(Util::isValid(ielev) && Util::isValid(oelev))
+                if(Util::is_valid(ielev) && Util::is_valid(oelev))
                     diff = abs(ielev - oelev);
                 elevDiff.push_back(std::pair<int, float>(index, diff));
                 Ilookup.push_back(ii);
