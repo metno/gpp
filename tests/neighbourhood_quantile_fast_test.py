@@ -105,6 +105,18 @@ class Test(unittest.TestCase):
         values = np.nan *np.zeros(values.shape)
         np.testing.assert_array_equal(values, gridpp.neighbourhood_quantile_fast(values, quantiles, halfwidth, thresholds))
 
+    def test_varying_quantile_3d(self):
+        """ For now check that this runs """
+        np.random.seed(1000)
+        values = np.random.rand(100, 50, 2)
+        halfwidth = 1
+        quantiles = np.ones(values[:, :, 0].shape) * 0.5
+        thresholds = [0, 0.25, 0.5, 0.75, 1]
+        gridpp.neighbourhood_quantile_fast(values, quantiles, halfwidth, thresholds)
+
+        values = np.nan *np.zeros(values.shape)
+        np.testing.assert_array_equal(values[:, :, 0], gridpp.neighbourhood_quantile_fast(values, quantiles, halfwidth, thresholds))
+
 
 if __name__ == '__main__':
     unittest.main()

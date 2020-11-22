@@ -420,9 +420,11 @@ vec2 gridpp::neighbourhood_quantile_fast(const vec3& input, const vec2& quantile
         throw std::invalid_argument("Quantile must have the same Y, X size as input, or have size (1, 1)");
 
     for(int y = 0; y < quantile.size(); y++) {
-        for(int x = 0; x < quantile.size(); x++) {
-            if(quantile[y][x] < 0 || quantile[y][x] > 1)
-                throw std::invalid_argument("All quantiles must be >= 0 and <= 1");
+        for(int x = 0; x < quantile[y].size(); x++) {
+            if(gridpp::is_valid(quantile[y][x])) {
+                if(quantile[y][x] < 0 || quantile[y][x] > 1)
+                    throw std::invalid_argument("All quantiles must be >= 0 and <= 1");
+            }
         }
     }
 
