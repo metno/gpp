@@ -105,5 +105,13 @@ class Test(unittest.TestCase):
                 output_3d = func(values3, halfwidth, gridpp.Mean)
                 np.testing.assert_array_almost_equal(output_2d, output_3d, 5)
 
+    def test_overflow(self):
+        """ Check that mean is not affected by overflow """
+        N = int(1e3)
+        values = np.array(np.arange(1, N)**3)
+        values = np.expand_dims(values, 1)
+        output = gridpp.neighbourhood(values, 0, gridpp.Mean)
+        np.testing.assert_array_almost_equal(np.zeros(values.shape), output / values - 1, 6)
+
 if __name__ == '__main__':
     unittest.main()

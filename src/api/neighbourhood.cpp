@@ -58,14 +58,14 @@ vec2 gridpp::neighbourhood(const vec2& input, int halfwidth, gridpp::Statistic s
                 if(j == 0 && i == 0) {
                     // Lower corner
                     if(gridpp::is_valid(value)) {
-                        values[i][j] = input[i][j];
+                        values[i][j] = value;
                         counts[i][j] = 1;
                     }
                 }
                 else if(j == 0) {
                     // Lower row
                     if(gridpp::is_valid(value)) {
-                        values[i][j] = values[i-1][j] + input[i][j];
+                        values[i][j] = values[i-1][j] + value;
                         counts[i][j] = counts[i-1][j] + 1;
                     }
                     else {
@@ -76,7 +76,7 @@ vec2 gridpp::neighbourhood(const vec2& input, int halfwidth, gridpp::Statistic s
                 else if(i == 0) {
                     // Left column
                     if(gridpp::is_valid(value)) {
-                        values[i][j] = values[i][j-1] + input[i][j];
+                        values[i][j] = values[i][j-1] + value;
                         counts[i][j] = counts[i][j-1] + 1;
                     }
                     else {
@@ -87,7 +87,7 @@ vec2 gridpp::neighbourhood(const vec2& input, int halfwidth, gridpp::Statistic s
                 }
                 else {
                     if(gridpp::is_valid(value)) {
-                        values[i][j] = values[i][j-1] + values[i-1][j] - values[i-1][j-1] + input[i][j];
+                        values[i][j] = values[i][j-1] + values[i-1][j] - values[i-1][j-1] + value;
                         counts[i][j] = counts[i][j-1] + counts[i-1][j] - counts[i-1][j-1] + 1;
                     }
                     else {
