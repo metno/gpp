@@ -6,7 +6,7 @@ using namespace gridpp;
 
 namespace {
     // Bilinear interpolation for a given point
-    float calc(const Grid& grid, const vec2& ivalues, float lat, float lon);
+    float calc(const Grid& grid, const vec2& iInputLats, const vec2& iInputLons, const vec2& ivalues, float lat, float lon);
     // Bilinear interpolation based on 4 surrounding points with coordinates (x0,y0), (x1,y1), etc
     // and values v0, v1, etc
     float bilinear(float x, float y, float x0, float x1, float x2, float x3, float y0, float y1, float y2, float y3, float v0, float v1, float v2, float v3);
@@ -39,7 +39,7 @@ vec2 gridpp::bilinear(const Grid& igrid, const Grid& ogrid, vec2 ivalues) {
             // and then figure out what side of this point the other there points are.
             float lat = iOutputLats[i][j];
             float lon = iOutputLons[i][j];
-            output[i][j] = ::calc(igrid, ivalues, lat, lon);
+            output[i][j] = ::calc(igrid, iInputLats, iInputLons, ivalues, lat, lon);
         }
     }
     return output;
@@ -64,7 +64,7 @@ vec gridpp::bilinear(const Grid& igrid, const Points& opoints, vec2 ivalues) {
         // and then figure out what side of this point the other there points are.
         float lat = iOutputLats[i];
         float lon = iOutputLons[i];
-        output[i] = ::calc(igrid, ivalues, lat, lon);
+        output[i] = ::calc(igrid, iInputLats, iInputLons, ivalues, lat, lon);
     }
     return output;
 }
@@ -201,13 +201,12 @@ namespace {
        return value;
     }
 
-    float calc(const Grid& grid, const vec2& ivalues, float lat, float lon) {
+    // Pass in input lats and lons, because otherwise we lose a lot of speed
+    float calc(const Grid& grid, const vec2& iInputLats, const vec2& iInputLons, const vec2& ivalues, float lat, float lon) {
         int I1 = gridpp::MV;
         int I2 = gridpp::MV;
         int J1 = gridpp::MV;
         int J2 = gridpp::MV;
-        const vec2 iInputLats = grid.get_lats();
-        const vec2 iInputLons = grid.get_lons();
         float output = gridpp::MV;
         bool inside = grid.get_box(lat, lon, I1, J1, I2, J2);
         // std::cout << "Coords: " << I1 << " " << J1 << " " << I2 << " " << J2 << " " << inside << std::endl;
