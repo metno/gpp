@@ -11,6 +11,7 @@ vec gridpp::wind_speed(const vec& xwind, const vec& ywind) {
         throw std::invalid_argument("xwind and ywind must be of the same size");
     int N = xwind.size();
     vec values(N, gridpp::MV);
+    #pragma omp parallel for
     for(int n = 0; n < N; n++) {
         values[n] = wind_speed(xwind[n], ywind[n]);
     }
@@ -28,6 +29,7 @@ vec gridpp::wind_direction(const vec& xwind, const vec& ywind) {
         throw std::invalid_argument("xwind and ywind must be of the same size");
     int N = xwind.size();
     vec values(N, gridpp::MV);
+    #pragma omp parallel for
     for(int n = 0; n < N; n++) {
         values[n] = wind_direction(xwind[n], ywind[n]);
     }

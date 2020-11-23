@@ -20,6 +20,7 @@ vec gridpp::apply_curve(const vec& fcst, const vec2& curve, gridpp::Extrapolatio
     float smallestFcst = curve_fcst[0];
     float largestObs   = curve_ref[C-1];
     float largestFcst  = curve_fcst[C-1];
+    #pragma omp parallel for
     for(int i = 0; i < N; i++) {
         float input = fcst[i];
         // Linear interpolation within curve

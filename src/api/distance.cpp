@@ -14,6 +14,7 @@ vec gridpp::distance(const Grid& grid, const Points& points, int num) {
     CoordinateType coordinate_type = grid.get_coordinate_type();
     vec lats = points.get_lats();
     vec lons = points.get_lons();
+    #pragma omp parallel for
     for(int i = 0; i < size; i++) {
         ivec2 indices = grid.get_closest_neighbours(lats[i], lons[i], num);
         float max_dist = 0;
@@ -42,6 +43,9 @@ vec2 gridpp::distance(const Grid& igrid, const Grid& ogrid, int num) {
     vec2 olons = ogrid.get_lons();
     for(int i = 0; i < size[0]; i++) {
         output[i].resize(size[1], 0);
+    }
+    #pragma omp parallel for collapse(2)
+    for(int i = 0; i < size[0]; i++) {
         for(int j = 0; j < size[1]; j++) {
             ivec2 indices = igrid.get_closest_neighbours(olats[i][j], olons[i][j], num);
             float max_dist = 0;
@@ -71,6 +75,9 @@ vec2 gridpp::distance(const Points& points, const Grid& grid, int num) {
     vec2 ilons = grid.get_lons();
     for(int i = 0; i < size[0]; i++) {
         output[i].resize(size[1], 0);
+    }
+    #pragma omp parallel for collapse(2)
+    for(int i = 0; i < size[0]; i++) {
         for(int j = 0; j < size[1]; j++) {
             ivec indices = points.get_closest_neighbours(ilats[i][j], ilons[i][j], num);
             float max_dist = 0;

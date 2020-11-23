@@ -18,6 +18,7 @@ vec gridpp::pressure(const vec& ielev, const vec& oelev, const vec& ipressure, c
         throw std::invalid_argument("pressure: Input arguments must be of the same size");
 
     vec values(N);
+    #pragma omp parallel for
     for(int i = 0; i < N; i++) {
         values[i] = gridpp::pressure(ielev[i], oelev[i], ipressure[i], itemperature[i]);
     }

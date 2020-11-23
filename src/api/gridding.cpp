@@ -11,6 +11,7 @@ vec2 gridpp::gridding(const Grid& grid, const Points& points, const vec& values,
     vec2 output = gridpp::init_vec2(Y, X);
 
     // Compute the statistic of the poin values at each gridpoint
+    #pragma omp parallel for collapse(2)
     for(int y = 0; y < Y; y++) {
         for(int x = 0; x < X; x++) {
             ivec I = points.get_neighbours(lats[y][x], lons[y][x], radius);

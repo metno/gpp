@@ -33,6 +33,7 @@ vec gridpp::qnh(const vec& pressure, const vec& altitude) {
         throw std::invalid_argument("Pressure and altitude vectors are not the same size");
 
     vec ret(pressure.size());
+    #pragma omp parallel for
     for(int y = 0; y < pressure.size(); y++) {
         ret[y] = gridpp::qnh(pressure[y], altitude[y]);
     }

@@ -24,6 +24,7 @@ vec gridpp::dewpoint(const vec& temperature, const vec& relative_humidity) {
         throw std::invalid_argument("Temperature and relative_humidity vectors are not the same size");
 
     vec ret(temperature.size());
+    #pragma omp parallel for
     for(int y = 0; y < temperature.size(); y++) {
         ret[y] = gridpp::dewpoint(temperature[y], relative_humidity[y]);
     }
@@ -81,6 +82,7 @@ vec gridpp::relative_humidity(const vec& temperature, const vec& dewpoint) {
         throw std::invalid_argument("Temperature and dewpoint vectors are not the same size");
 
     vec ret(temperature.size());
+    #pragma omp parallel for
     for(int y = 0; y < temperature.size(); y++) {
         ret[y] = gridpp::relative_humidity(temperature[y], dewpoint[y]);
     }
@@ -112,6 +114,7 @@ vec gridpp::wetbulb(const vec& temperature, const vec& pressure, const vec& rela
         throw std::invalid_argument("Temperature and relative_humidity vectors are not the same size");
 
     vec ret(temperature.size());
+    #pragma omp parallel for
     for(int y = 0; y < temperature.size(); y++) {
         ret[y] = gridpp::wetbulb(temperature[y], pressure[y], relative_humidity[y]);
     }
