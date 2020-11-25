@@ -62,6 +62,7 @@ int main(int argc, const char *argv[]) {
 
    Variable variable = setup.variable;
    std::vector<double> offsets = forecast->getTimes();
+   int D = setup.forecasts.size();
 
    std::cout << "Number of obs files: " << setup.observations.size() << std::endl;
    std::cout << "Number of fcst files: " << setup.forecasts.size() << std::endl;
