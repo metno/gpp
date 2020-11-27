@@ -4,6 +4,7 @@
 #include <armadillo>
 #include <assert.h>
 #include <exception>
+#include <boost/math/distributions/normal.hpp>
 
 using namespace gridpp;
 
@@ -117,7 +118,78 @@ vec gridpp::optimal_interpolation(const gridpp::Points& bpoints,
         throw std::invalid_argument(ss.str());
     }
 
+    vec sigmaO(pratios.size());
+    vec psigmaB(pratios.size());
+    for(int i = 0; i < pratios.size(); i++) {
+        sigmaO[i] = sqrt(pratios[i]);
+        psigmaB[i] = 1;
+    }
+    vec sigmaB(background.size());
+    for(int i = 0; i < background.size(); i++) {
+        sigmaB[i] = 1;
+    }
+    vec analysis_sigma;
+    vec analysis = optimal_interpolation_full(bpoints, background, sigmaB, points, pobs, sigmaO, psigmaB, pbackground, structure, max_points, analysis_sigma);
+    return analysis;
+}
+
+vec gridpp::optimal_interpolation_full(const gridpp::Points& bpoints,
+        const vec& background,
+        const vec& bsigmas,
+        const gridpp::Points& points,
+        const vec& pobs,
+        const vec& psigmas,
+        const vec& pbsigmas,
+        const vec& pbackground,
+        const gridpp::StructureFunction& structure,
+        int max_points,
+        vec& analysis_sigmas) {
+
+    // Check input data
+    if(max_points < 0)
+        throw std::invalid_argument("max_points must be >= 0");
+
+    if(bpoints.get_coordinate_type() != points.get_coordinate_type()) {
+        throw std::invalid_argument("Both background points and observations points must be of same coordinate type (lat/lon or x/y)");
+    }
+    if(background.size() != bpoints.size()) {
+        std::stringstream ss;
+        ss << "Input field (" << bpoints.size() << ") is not the same size as the grid (" << background.size() << ")";
+        throw std::invalid_argument(ss.str());
+    }
+    if(background.size() != bsigmas.size()) {
+        std::stringstream ss;
+        ss << "Input bsigma (" << bsigmas.size() << ") is not the same size as the grid (" << background.size() << ")";
+        throw std::invalid_argument(ss.str());
+    }
+    if(pobs.size() != points.size()) {
+        std::stringstream ss;
+        ss << "Observations (" << pobs.size() << ") and points (" << points.size() << ") size mismatch";
+        throw std::invalid_argument(ss.str());
+    }
+    if(psigmas.size() != points.size()) {
+        std::stringstream ss;
+        ss << "Sigmas (" << psigmas.size() << ") and points (" << points.size() << ") size mismatch";
+        throw std::invalid_argument(ss.str());
+    }
+    if(pbsigmas.size() != points.size()) {
+        std::stringstream ss;
+        ss << "Background sigmas (" << psigmas.size() << ") and points (" << points.size() << ") size mismatch";
+        throw std::invalid_argument(ss.str());
+    }
+
+    if(bpoints.get_coordinate_type() != points.get_coordinate_type()) {
+        throw std::invalid_argument("Both background and observations points must be of same coordinate type (lat/lon or x/y)");
+    }
     int nY = background.size();
+    int nS = points.size();
+
+    analysis_sigmas.resize(nY);
+
+    vec pratios(nS);
+    for(int s = 0; s < nS; s++) {
+        pratios[s] = psigmas[s] * psigmas[s] / pbsigmas[s] / pbsigmas[s];
+    }
 
     // Prepare output matrix
     vec output(nY);
@@ -131,7 +203,6 @@ vec gridpp::optimal_interpolation(const gridpp::Points& bpoints,
     vec plons = points.get_lons();
     vec pelevs = points.get_elevs();
     vec plafs = points.get_lafs();
-    int nS = plats.size();
 
     float localizationRadius = structure.localization_distance();
 
@@ -144,8 +215,7 @@ vec gridpp::optimal_interpolation(const gridpp::Points& bpoints,
     for(int y = 0; y < nY; y++) {
         float lat = blats[y];
         float lon = blons[y];
-        float elev = belevs[y];
-        float laf = blafs[y];
+        Point p1 = bpoints.get_point(y);
 
         // Find observations within localization radius
         // TODO: Check that the chosen ones have elevation
@@ -164,8 +234,7 @@ vec gridpp::optimal_interpolation(const gridpp::Points& bpoints,
         for(int i = 0; i < lLocIndices0.size(); i++) {
             int index = lLocIndices0[i];
             if(gridpp::is_valid(pobs[index])) {
-                Point p1(plats[index], plons[index], pelevs[index], plafs[index], coordinate_type);
-                Point p2(lat, lon, elev, laf, coordinate_type);
+                Point p2 = points.get_point(index);
                 float rho = structure.corr_background(p1, p2);
                 if(rho > 0) {
                     lRhos0.push_back(std::pair<float,int>(rho, i));
@@ -218,42 +287,44 @@ vec gridpp::optimal_interpolation(const gridpp::Points& bpoints,
             lY(i) = gY[index];
             lR(i, i) = pratios[index];
             lG(0, i) = lRhos(i);
-            Point p1(plats[index], plons[index], pelevs[index], plafs[index]);
+            Point p1 = points.get_point(index);
             for(int j = 0; j < lS; j++) {
                 int index_j = lLocIndices[j];
-                Point p2(plats[index_j], plons[index_j], pelevs[index_j], plafs[index_j]);
+                Point p2 = points.get_point(index_j);
                 lP(i, j) = structure.corr(p1, p2);
             }
         }
         mattype lGSR = lG * arma::inv(lP + lR);
         vectype dx = lGSR * (lObs - lY);
         output[y] = background[y] + dx[0];
+        mattype a = (lGSR * lG.t());
+        analysis_sigmas[y] = bsigmas[y] * sqrt(1 - a(0, 0));
     }
 
     return output;
 }
-
-vec gridpp::optimal_interpolation_transform(const gridpp::Points& bpoints,
-        const vec& background,
-        float bsigma,
+vec2 gridpp::optimal_interpolation_full(const gridpp::Grid& bgrid,
+        const vec2& background,
+        const vec2& bsigmas,
         const gridpp::Points& points,
         const vec& pobs,
         const vec& psigmas,
+        const vec& pbsigmas,
         const vec& pbackground,
         const gridpp::StructureFunction& structure,
         int max_points,
-        const gridpp::Transform& transform) {
+        vec2& analysis_sigma) {
 
     // Check input data
     if(max_points < 0)
         throw std::invalid_argument("max_points must be >= 0");
 
-    if(bpoints.get_coordinate_type() != points.get_coordinate_type()) {
-        throw std::invalid_argument("Both background points and observations points must be of same coordinate type (lat/lon or x/y)");
+    if(bgrid.get_coordinate_type() != points.get_coordinate_type()) {
+        throw std::invalid_argument("Both background grid and observations points must be of same coordinate type (lat/lon or x/y)");
     }
-    if(background.size() != bpoints.size()) {
+    if(background.size() != bgrid.size()[0] || background[0].size() != bgrid.size()[1]) {
         std::stringstream ss;
-        ss << "Input field (" << bpoints.size() << ") is not the same size as the grid (" << background.size() << ")";
+        ss << "input field (" << bgrid.size()[0] << "," << bgrid.size()[1] << ") is not the same size as the grid (" << background.size() << "," << background[0].size() << ")";
         throw std::invalid_argument(ss.str());
     }
     if(pobs.size() != points.size()) {
@@ -266,104 +337,39 @@ vec gridpp::optimal_interpolation_transform(const gridpp::Points& bpoints,
         ss << "Sigmas (" << psigmas.size() << ") and points (" << points.size() << ") size mismatch";
         throw std::invalid_argument(ss.str());
     }
-
-    if(bpoints.get_coordinate_type() != points.get_coordinate_type()) {
-        throw std::invalid_argument("Both background and observations points must be of same coordinate type (lat/lon or x/y)");
-    }
-    int nY = background.size();
-    int nS = points.size();
-
-    // Transform the background
-    vec background_transformed = background;
-    // #pragma omp parallel for
-    for(int y = 0; y < nY; y++) {
-        float value = background_transformed[y];
-        if(gridpp::is_valid(value))
-            background_transformed[y] = transform.forward(value);
+    if(pbackground.size() != points.size()) {
+        std::stringstream ss;
+        ss << "Background (" << pbackground.size() << ") and points (" << points.size() << ") size mismatch";
+        throw std::invalid_argument(ss.str());
     }
 
-    vec pbackground_transformed = pbackground;
-    vec pobs_transformed = pobs;
-    vec pratios(nS);
-    for(int s = 0; s < nS; s++) {
-        float value = pbackground_transformed[s];
-        if(gridpp::is_valid(value))
-            pbackground_transformed[s] = transform.forward(value);
-
-        value = pobs_transformed[s];
-        if(gridpp::is_valid(value))
-            pobs_transformed[s] = transform.forward(value);
-
-        pratios[s] = psigmas[s] * psigmas[s] / bsigma / bsigma;
-    }
-
-    vec analysis = optimal_interpolation(bpoints, background_transformed, points, pobs_transformed, pratios, pbackground_transformed, structure, max_points);
-
-    // Transform the background
-    // #pragma omp parallel for
-    for(int y = 0; y < nY; y++) {
-        float value = analysis[y];
-        if(gridpp::is_valid(value))
-            analysis[y] = transform.backward(value);
-    }
-
-    return analysis;
-}
-vec2 gridpp::optimal_interpolation_transform(const gridpp::Grid& bgrid,
-        const vec2& background,
-        float bsigma,
-        const gridpp::Points& points,
-        const vec& pobs,
-        const vec& psigmas,
-        const vec& pbackground,
-        const gridpp::StructureFunction& structure,
-        int max_points,
-        const gridpp::Transform& transform) {
-
-    if(bgrid.get_coordinate_type() != points.get_coordinate_type()) {
-        throw std::invalid_argument("Both background grid and observations points must be of same coordinate type (lat/lon or x/y)");
-    }
     int nY = background.size();
     int nX = background[0].size();
-    int nS = points.size();
 
-    // Transform the background
-    vec2 background_transformed = background;
-    // #pragma omp parallel for
-    for(int x = 0; x < nX; x++) {
-        for(int y = 0; y < nY; y++) {
-            float value = background_transformed[y][x];
-            if(gridpp::is_valid(value))
-                background_transformed[y][x] = transform.forward(value);
+    gridpp::Points bpoints = bgrid.to_points();
+    vec background1(nY * nX);
+    vec bsigmas1(nY * nX);
+    int count = 0;
+    for(int y = 0; y < nY; y++) {
+        for(int x = 0; x < nX; x++) {
+            background1[count] = background[y][x];
+            bsigmas1[count] = bsigmas[y][x];
+            count++;
         }
     }
-
-    vec pbackground_transformed = pbackground;
-    vec pobs_transformed = pobs;
-    vec pratios(nS);
-    for(int s = 0; s < nS; s++) {
-        float value = pbackground_transformed[s];
-        if(gridpp::is_valid(value))
-            pbackground_transformed[s] = transform.forward(value);
-
-        value = pobs_transformed[s];
-        if(gridpp::is_valid(value))
-            pobs_transformed[s] = transform.forward(value);
-
-        pratios[s] = psigmas[s] * psigmas[s] / bsigma / bsigma;
-    }
-
-    vec2 analysis = optimal_interpolation(bgrid, background_transformed, points, pobs_transformed, pratios, pbackground_transformed, structure, max_points);
-
-    // Transform the background
-    // #pragma omp parallel for
-    for(int x = 0; x < nX; x++) {
-        for(int y = 0; y < nY; y++) {
-            float value = analysis[y][x];
-            if(gridpp::is_valid(value))
-                analysis[y][x] = transform.backward(value);
+    vec analysis_sigma1;
+    vec output1 = optimal_interpolation_full(bpoints, background1, bsigmas1, points, pobs, psigmas, pbsigmas, pbackground, structure, max_points, analysis_sigma1);
+    vec2 output = gridpp::init_vec2(nY, nX);
+    analysis_sigma.clear();
+    analysis_sigma.resize(nY);
+    count = 0;
+    for(int y = 0; y < nY; y++) {
+        analysis_sigma[y].resize(nX);
+        for(int x = 0; x < nX; x++) {
+            output[y][x] = output1[count];
+            analysis_sigma[y][x] = analysis_sigma1[count];
+            count++;
         }
     }
-
-    return analysis;
+    return output;
 }

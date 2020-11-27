@@ -142,27 +142,29 @@ namespace gridpp {
 
     /** This is its own function because the variance parameterization is different than in the
       * non-transformed case */
-    vec2 optimal_interpolation_transform(const Grid& bgrid,
+    vec2 optimal_interpolation_full(const Grid& bgrid,
             const vec2& background,
-            float bsigma,
+            const vec2& bsigmas,
             const Points& points,
             const vec& pobs,
             const vec& psigmas,
+            const vec& pbsigmas,
             const vec& pbackground,
             const StructureFunction& structure,
             int max_points,
-            const Transform& transform);
+            vec2& analysis_sigmas);
 
-    vec optimal_interpolation_transform(const Points& bpoints,
+    vec optimal_interpolation_full(const Points& bpoints,
             const vec& background,
-            float bsigma,
+            const vec& bsigmas,
             const Points& points,
             const vec& pobs,
             const vec& psigmas,
+            const vec& pbsigmas,
             const vec& pbackground,
             const StructureFunction& structure,
             int max_points,
-            const Transform& transform);
+            vec& analysis_sigmas);
 
     /** Optimal interpolation using a structure function based on an ensemble 
       * See Lussana et al 2019 (DOI: 10.1002/qj.3646)
