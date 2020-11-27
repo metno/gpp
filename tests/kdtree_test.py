@@ -74,13 +74,15 @@ class KDTreeTest(unittest.TestCase):
     def test_radius_match(self):
         """Check that points right on the radius edge count as a match"""
         points = gridpp.Points([0, 1000, 2000], [0, 0, 0], [0, 0, 0], [0, 0, 0], gridpp.Cartesian)
-        I = points.get_neighbours(900, 0, 100)
+        I = points.get_neighbours(900, 0, 501)
         np.testing.assert_array_equal(I, [1])
         I = points.get_neighbours(900, 0, 99.99)
         np.testing.assert_array_equal(I, [])
         I = points.get_neighbours(0, 0, 1000)
+        np.testing.assert_array_equal(I, [0])
+        I = points.get_neighbours(0, 0, 1001)
         np.testing.assert_array_equal(I, [0, 1])
-        I = points.get_neighbours(0, 0, 1000, False)
+        I = points.get_neighbours(0, 0, 1001, False)
         np.testing.assert_array_equal(I, [1])
 
 

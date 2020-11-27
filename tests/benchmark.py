@@ -19,26 +19,28 @@ def main():
     input = dict()
     grids = dict()
     points = dict()
+    np.random.seed(1000)
 
     for i in [10, 50, 100, 200, 1000, 2000, 10000]:
-        input[i] = np.random.rand(i * args.scaling, i)
+        input[i] = np.random.rand(i * args.scaling, i)*10
     for i in [10, 50, 100, 200, 1000]:
         grids[i] = gridpp.Grid(*np.meshgrid(np.linspace(0, 1, i), np.linspace(0, 1, i * args.scaling)))
     for i in [1000]:
         # points[i] = gridpp.Points(np.linspace(0, 1, i), np.zeros(i))
-        points[i] = gridpp.Points(np.random.rand(i), np.random.rand(i))
-    structure = gridpp.BarnesStructure(1000)
+        points[i] = gridpp.Points(np.random.rand(i) * 10, np.random.rand(i) * 10)
+    structure = gridpp.BarnesStructure(10000)
     radius = 7
     quantile = 0.5
     thresholds = np.linspace(0, 1, 11)
     run = dict()
     run[(gridpp.Grid, "1000²")] = {"expected": 0.74, "args":np.meshgrid(np.linspace(0, 1, 1000 * args.scaling), np.linspace(0, 1, 1000))}
-    run[(gridpp.neighbourhood, "10000²")] = {"expected": 2.46, "args":(input[10000], radius, gridpp.Mean)}
+    run[(gridpp.neighbourhood, "10000²")] = {"expected": 2.05, "args":(np.zeros([10000, 10000]), radius, gridpp.Mean)}
     run[(gridpp.neighbourhood,"2000² max")] = {"expected": 2.23, "args":(input[2000], radius, gridpp.Max)}
-    run[(gridpp.neighbourhood_quantile_fast, "2000²")] = {"expected": 1.54, "args":(input[2000], quantile, radius, thresholds)}
+    run[(gridpp.neighbourhood_quantile_fast, "2000²")] = {"expected": 1.23, "args":(input[2000], quantile, radius, thresholds)}
     run[(gridpp.bilinear, "1000²")] = {"expected": 1.68, "args":(grids[1000], grids[1000], input[1000])}
     run[(gridpp.nearest, "1000²")] = {"expected": 1.52, "args":(grids[1000], grids[1000], input[1000])}
-    run[(gridpp.optimal_interpolation, "1000² 1000")] = {"expected": 2.47, "args":(grids[1000], input[1000], points[1000], np.zeros(1000), np.ones(1000), np.ones(1000), structure, 10)}
+    run[(gridpp.optimal_interpolation, "1000² 1000")] = {"expected": 1.57, "args":(grids[1000],
+        input[1000], points[1000], np.zeros(1000), np.ones(1000), np.ones(1000), structure, 20)}
     run[(gridpp.dewpoint, "1e7")] = {"expected": 0.53, "args":(np.zeros(10000000) + 273.15, np.zeros(10000000))}
 
     print("Gridpp version %s" % gridpp.version())

@@ -43,16 +43,14 @@ ivec gridpp::KDTree::get_neighbours(float lat, float lon, float radius, bool inc
     std::vector<value> results;
 #if 1
     point p(x, y, z);
-    within_radius r(p, radius);
+    box bx(point(x - radius, y - radius, z - radius), point(x + radius, y + radius, z + radius));
+    within_radius r(p, radius, include_match);
 
-    if(!include_match) {
-        // Include match search
-        is_not_equal s(p);
-        mTree.query(boost::geometry::index::satisfies(r) && boost::geometry::index::satisfies(s), std::back_inserter(results));
-    }
-    else {
-        mTree.query(boost::geometry::index::satisfies(r), std::back_inserter(results));
-    }
+    // NOTE: The boost::geometry::index::within predicate is extremely efficient at finding points
+    // within the box, whereas the within_radius predicate is slow since boost has to test all points.
+    // By including within_radius second in the && only when the within predicate evaluates to true
+    // will the within_radius predicate be evaluated. See #6e4d5ca for how to do this incorrectly.
+    mTree.query(boost::geometry::index::within(bx) && boost::geometry::index::satisfies(r), std::back_inserter(results));
     int num = results.size();
 
     ivec ret;
@@ -61,6 +59,7 @@ ivec gridpp::KDTree::get_neighbours(float lat, float lon, float radius, bool inc
         ret.push_back(results[i].second);
     }
 #else
+    // Alternative implementation that is roughly the same speed
     box bx(point(x - radius, y - radius, z - radius), point(x + radius, y + radius, z + radius));
     mTree.query(boost::geometry::index::within(bx), std::back_inserter(results));
     int num = results.size();
@@ -72,7 +71,8 @@ ivec gridpp::KDTree::get_neighbours(float lat, float lon, float radius, bool inc
         gridpp::KDTree::convert_coordinates(mLats[results[i].second], mLons[results[i].second], x1, y1, z1);
         float dist = gridpp::KDTree::calc_distance(x, y, z, x1, y1, z1);
         if(dist <= radius) {
-            ret.push_back(results[i].second);
+            if(include_match || dist != 0)
+                ret.push_back(results[i].second);
         }
     }
 #endif
@@ -216,9 +216,10 @@ gridpp::KDTree::KDTree(const gridpp::KDTree& other) {
     mTree = other.mTree;
     mType = other.mType;
 }
-gridpp::KDTree::within_radius::within_radius(point p, float radius)  {
+gridpp::KDTree::within_radius::within_radius(point p, float radius, bool include_match)  {
     this->p = p;
     this->radius = radius;
+    this->include_match = include_match;
 }
 
 bool gridpp::KDTree::within_radius::operator()(value const& v) const {
@@ -228,7 +229,12 @@ bool gridpp::KDTree::within_radius::operator()(value const& v) const {
     float x1 = p.get<0>();
     float y1 = p.get<1>();
     float z1 = p.get<2>();
-    return gridpp::KDTree::calc_distance(x0, y0, z0, x1, y1, z1) <= radius;
+    if(include_match)
+        return gridpp::KDTree::calc_distance(x0, y0, z0, x1, y1, z1) <= radius;
+    else {
+        float dist = gridpp::KDTree::calc_distance(x0, y0, z0, x1, y1, z1);
+        return dist <= radius && dist > 0;
+    }
 }
 gridpp::KDTree::is_not_equal::is_not_equal(point p)  {
     this->p = p;

@@ -140,8 +140,6 @@ namespace gridpp {
             const StructureFunction& structure,
             int max_points);
 
-    /** This is its own function because the variance parameterization is different than in the
-      * non-transformed case */
     vec2 optimal_interpolation_full(const Grid& bgrid,
             const vec2& background,
             const vec2& bsigmas,
@@ -968,11 +966,12 @@ namespace gridpp {
 
             struct within_radius {
                 public:
-                    within_radius(point p, float radius);
+                    within_radius(point p, float radius, bool include_match);
                     bool operator()(value const& v) const;
                 private:
                     float radius;
                     point p;
+                    bool include_match;
             };
             struct is_not_equal {
                 public:
