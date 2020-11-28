@@ -89,6 +89,32 @@ float gridpp::calc_statistic(const vec& array, gridpp::Statistic statistic) {
     return value;
 }
 float gridpp::calc_quantile(const vec& array, float quantile) {
+    if(quantile == 0) {
+        float min = gridpp::MV;
+        for(int i = 0; i < array.size(); i++) {
+            float val = array[i];
+            if(!gridpp::is_valid(val))
+                continue;
+            else if(!gridpp::is_valid(min))
+                min = val;
+            else if(val < min)
+                min = val;
+        }
+        return min;
+    }
+    else if(quantile == 1) {
+        float max = gridpp::MV;
+        for(int i = 0; i < array.size(); i++) {
+            float val = array[i];
+            if(!gridpp::is_valid(val))
+                continue;
+            else if(!gridpp::is_valid(max))
+                max = val;
+            else if(val > max)
+                max = val;
+        }
+        return max;
+    }
     // Initialize to missing
     float value = gridpp::MV;
     // Remove missing

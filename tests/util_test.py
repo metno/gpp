@@ -52,8 +52,9 @@ class Test(unittest.TestCase):
         self.assertEqual(gridpp.calc_quantile([0, np.nan, 2], 1), 2)
         self.assertEqual(gridpp.calc_quantile([0, np.nan, 2], 0), 0)
         self.assertEqual(gridpp.calc_quantile([0, np.nan, 2], 0.5), 1)
-        self.assertTrue(np.isnan(gridpp.calc_quantile([np.nan, np.nan, np.nan], 0.5)))
-        self.assertTrue(np.isnan(gridpp.calc_quantile([np.nan], 0.5)))
+        for quantile in [0, 0.5, 1]:
+            self.assertTrue(np.isnan(gridpp.calc_quantile([np.nan, np.nan, np.nan], quantile)))
+            self.assertTrue(np.isnan(gridpp.calc_quantile([np.nan], quantile)))
         # BUG: This should work:
         # self.assertTrue(np.isnan(gridpp.calc_quantile([], 0.5)))
 

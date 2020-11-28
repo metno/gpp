@@ -35,7 +35,7 @@ def main():
     run = dict()
     run[(gridpp.Grid, "1000²")] = {"expected": 0.74, "args":np.meshgrid(np.linspace(0, 1, 1000 * args.scaling), np.linspace(0, 1, 1000))}
     run[(gridpp.neighbourhood, "10000²")] = {"expected": 2.05, "args":(np.zeros([10000, 10000]), radius, gridpp.Mean)}
-    run[(gridpp.neighbourhood,"2000² max")] = {"expected": 2.23, "args":(input[2000], radius, gridpp.Max)}
+    run[(gridpp.neighbourhood,"2000² max")] = {"expected": 0.99, "args":(input[2000], radius, gridpp.Max)}
     run[(gridpp.neighbourhood_quantile_fast, "2000²")] = {"expected": 1.23, "args":(input[2000], quantile, radius, thresholds)}
     run[(gridpp.bilinear, "1000²")] = {"expected": 1.68, "args":(grids[1000], grids[1000], input[1000])}
     run[(gridpp.nearest, "1000²")] = {"expected": 1.52, "args":(grids[1000], grids[1000], input[1000])}
