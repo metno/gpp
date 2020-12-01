@@ -184,7 +184,8 @@ vec gridpp::optimal_interpolation_full(const gridpp::Points& bpoints,
     int nY = background.size();
     int nS = points.size();
 
-    analysis_sigmas.resize(nY);
+    // Initialize sigma to background (for points where there are no observations)
+    analysis_sigmas = bsigmas;
 
     vec pratios(nS);
     for(int s = 0; s < nS; s++) {
