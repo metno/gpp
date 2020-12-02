@@ -118,32 +118,32 @@ vec gridpp::optimal_interpolation(const gridpp::Points& bpoints,
         throw std::invalid_argument(ss.str());
     }
 
-    vec sigmaO(pratios.size());
-    vec psigmaB(pratios.size());
+    vec obs_variance(pratios.size());
+    vec bvariance_at_points(pratios.size());
     for(int i = 0; i < pratios.size(); i++) {
-        sigmaO[i] = sqrt(pratios[i]);
-        psigmaB[i] = 1;
+        obs_variance[i] = pratios[i];
+        bvariance_at_points[i] = 1;
     }
-    vec sigmaB(background.size());
+    vec bvariance(background.size());
     for(int i = 0; i < background.size(); i++) {
-        sigmaB[i] = 1;
+        bvariance[i] = 1;
     }
-    vec analysis_sigma;
-    vec analysis = optimal_interpolation_full(bpoints, background, sigmaB, points, pobs, sigmaO, psigmaB, pbackground, structure, max_points, analysis_sigma);
+    vec analysis_variance;
+    vec analysis = optimal_interpolation_full(bpoints, background, bvariance, points, pobs, obs_variance, pbackground, bvariance_at_points, structure, max_points, analysis_variance);
     return analysis;
 }
 
 vec gridpp::optimal_interpolation_full(const gridpp::Points& bpoints,
         const vec& background,
-        const vec& bsigmas,
+        const vec& bvariance,
         const gridpp::Points& points,
         const vec& pobs,
-        const vec& psigmas,
-        const vec& pbsigmas,
+        const vec& obs_variance,
         const vec& pbackground,
+        const vec& bvariance_at_points,
         const gridpp::StructureFunction& structure,
         int max_points,
-        vec& analysis_sigmas) {
+        vec& analysis_variance) {
 
     // Check input data
     if(max_points < 0)
@@ -157,9 +157,9 @@ vec gridpp::optimal_interpolation_full(const gridpp::Points& bpoints,
         ss << "Input field (" << bpoints.size() << ") is not the same size as the grid (" << background.size() << ")";
         throw std::invalid_argument(ss.str());
     }
-    if(background.size() != bsigmas.size()) {
+    if(background.size() != bvariance.size()) {
         std::stringstream ss;
-        ss << "Input bsigma (" << bsigmas.size() << ") is not the same size as the grid (" << background.size() << ")";
+        ss << "Input bvariance (" << bvariance.size() << ") is not the same size as the grid (" << background.size() << ")";
         throw std::invalid_argument(ss.str());
     }
     if(pobs.size() != points.size()) {
@@ -167,14 +167,14 @@ vec gridpp::optimal_interpolation_full(const gridpp::Points& bpoints,
         ss << "Observations (" << pobs.size() << ") and points (" << points.size() << ") size mismatch";
         throw std::invalid_argument(ss.str());
     }
-    if(psigmas.size() != points.size()) {
+    if(obs_variance.size() != points.size()) {
         std::stringstream ss;
-        ss << "Sigmas (" << psigmas.size() << ") and points (" << points.size() << ") size mismatch";
+        ss << "Obs variance (" << obs_variance.size() << ") and points (" << points.size() << ") size mismatch";
         throw std::invalid_argument(ss.str());
     }
-    if(pbsigmas.size() != points.size()) {
+    if(bvariance_at_points.size() != points.size()) {
         std::stringstream ss;
-        ss << "Background sigmas (" << psigmas.size() << ") and points (" << points.size() << ") size mismatch";
+        ss << "Background variance (" << bvariance_at_points.size() << ") and points (" << points.size() << ") size mismatch";
         throw std::invalid_argument(ss.str());
     }
 
@@ -185,11 +185,11 @@ vec gridpp::optimal_interpolation_full(const gridpp::Points& bpoints,
     int nS = points.size();
 
     // Initialize sigma to background (for points where there are no observations)
-    analysis_sigmas = bsigmas;
+    analysis_variance = bvariance;
 
     vec pratios(nS);
     for(int s = 0; s < nS; s++) {
-        pratios[s] = psigmas[s] * psigmas[s] / pbsigmas[s] / pbsigmas[s];
+        pratios[s] = obs_variance[s] / bvariance_at_points[s];
     }
 
     // Prepare output matrix
@@ -299,22 +299,22 @@ vec gridpp::optimal_interpolation_full(const gridpp::Points& bpoints,
         vectype dx = lGSR * (lObs - lY);
         output[y] = background[y] + dx[0];
         mattype a = (lGSR * lG.t());
-        analysis_sigmas[y] = bsigmas[y] * sqrt(1 - a(0, 0));
+        analysis_variance[y] = bvariance[y] * (1 - a(0, 0));
     }
 
     return output;
 }
 vec2 gridpp::optimal_interpolation_full(const gridpp::Grid& bgrid,
         const vec2& background,
-        const vec2& bsigmas,
+        const vec2& bvariance,
         const gridpp::Points& points,
-        const vec& pobs,
-        const vec& psigmas,
-        const vec& pbsigmas,
-        const vec& pbackground,
+        const vec& obs,
+        const vec& obs_variance,
+        const vec& background_at_points,
+        const vec& bvariance_at_points,
         const gridpp::StructureFunction& structure,
         int max_points,
-        vec2& analysis_sigma) {
+        vec2& analysis_variance) {
 
     // Check input data
     if(max_points < 0)
@@ -328,19 +328,19 @@ vec2 gridpp::optimal_interpolation_full(const gridpp::Grid& bgrid,
         ss << "input field (" << bgrid.size()[0] << "," << bgrid.size()[1] << ") is not the same size as the grid (" << background.size() << "," << background[0].size() << ")";
         throw std::invalid_argument(ss.str());
     }
-    if(pobs.size() != points.size()) {
+    if(obs.size() != points.size()) {
         std::stringstream ss;
-        ss << "Observations (" << pobs.size() << ") and points (" << points.size() << ") size mismatch";
+        ss << "Observations (" << obs.size() << ") and points (" << points.size() << ") size mismatch";
         throw std::invalid_argument(ss.str());
     }
-    if(psigmas.size() != points.size()) {
+    if(obs_variance.size() != points.size()) {
         std::stringstream ss;
-        ss << "Sigmas (" << psigmas.size() << ") and points (" << points.size() << ") size mismatch";
+        ss << "Sigmas (" << obs_variance.size() << ") and points (" << points.size() << ") size mismatch";
         throw std::invalid_argument(ss.str());
     }
-    if(pbackground.size() != points.size()) {
+    if(background_at_points.size() != points.size()) {
         std::stringstream ss;
-        ss << "Background (" << pbackground.size() << ") and points (" << points.size() << ") size mismatch";
+        ss << "Background (" << background_at_points.size() << ") and points (" << points.size() << ") size mismatch";
         throw std::invalid_argument(ss.str());
     }
 
@@ -349,26 +349,26 @@ vec2 gridpp::optimal_interpolation_full(const gridpp::Grid& bgrid,
 
     gridpp::Points bpoints = bgrid.to_points();
     vec background1(nY * nX);
-    vec bsigmas1(nY * nX);
+    vec bvariance1(nY * nX);
     int count = 0;
     for(int y = 0; y < nY; y++) {
         for(int x = 0; x < nX; x++) {
             background1[count] = background[y][x];
-            bsigmas1[count] = bsigmas[y][x];
+            bvariance1[count] = bvariance[y][x];
             count++;
         }
     }
-    vec analysis_sigma1;
-    vec output1 = optimal_interpolation_full(bpoints, background1, bsigmas1, points, pobs, psigmas, pbsigmas, pbackground, structure, max_points, analysis_sigma1);
+    vec analysis_variance1;
+    vec output1 = optimal_interpolation_full(bpoints, background1, bvariance1, points, obs, obs_variance, background_at_points, bvariance_at_points, structure, max_points, analysis_variance1);
     vec2 output = gridpp::init_vec2(nY, nX);
-    analysis_sigma.clear();
-    analysis_sigma.resize(nY);
+    analysis_variance.clear();
+    analysis_variance.resize(nY);
     count = 0;
     for(int y = 0; y < nY; y++) {
-        analysis_sigma[y].resize(nX);
+        analysis_variance[y].resize(nX);
         for(int x = 0; x < nX; x++) {
             output[y][x] = output1[count];
-            analysis_sigma[y][x] = analysis_sigma1[count];
+            analysis_variance[y][x] = analysis_variance1[count];
             count++;
         }
     }

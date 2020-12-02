@@ -11,7 +11,7 @@
 #endif
 #include <exception>
 
-#define GRIDPP_VERSION "0.6.0b1"
+#define GRIDPP_VERSION "0.6.0.dev1"
 #define __version__ GRIDPP_VERSION
 
 namespace gridpp {
@@ -140,26 +140,50 @@ namespace gridpp {
             const StructureFunction& structure,
             int max_points);
 
+    /** Optimal interpolation for a deterministic gridded field including analysis variance
+      * @param bpoints Grid of background field
+      * @param background 2D field of background values
+      * @param bvariance Variance of background field
+      * @param points Points of observations
+      * @param obs Vector of observations
+      * @param obs_variance Variance of observations
+      * @param background_at_points Background interpolated to observation points
+      * @param bvariance_at_points Variance of background interpolated to observation points
+      * @param structure Structure function
+      * @param max_points Maximum number of observations to use inside localization zone; Use 0 to disable
+    */
     vec2 optimal_interpolation_full(const Grid& bgrid,
             const vec2& background,
-            const vec2& bsigmas,
+            const vec2& bvariance,
             const Points& points,
-            const vec& pobs,
-            const vec& psigmas,
-            const vec& pbsigmas,
-            const vec& pbackground,
+            const vec& obs,
+            const vec& obs_variance,
+            const vec& background_at_points,
+            const vec& bvariance_at_points,
             const StructureFunction& structure,
             int max_points,
-            vec2& analysis_sigmas);
+            vec2& analysis_variance);
 
+    /** Optimal interpolation for a deterministic vector of points including analysis variance
+      * @param bpoints Points of background field
+      * @param background 1D field of background values
+      * @param bvariance Variance of background field
+      * @param points Points of observations
+      * @param obs Vector of observations
+      * @param obs_variance Variance of observations
+      * @param background_at_points Background interpolated to observation points
+      * @param bvariance_at_points Variance of background interpolated to observation points
+      * @param structure Structure function
+      * @param max_points Maximum number of observations to use inside localization zone; Use 0 to disable
+    */
     vec optimal_interpolation_full(const Points& bpoints,
             const vec& background,
-            const vec& bsigmas,
+            const vec& bvariance,
             const Points& points,
-            const vec& pobs,
-            const vec& psigmas,
-            const vec& pbsigmas,
-            const vec& pbackground,
+            const vec& obs,
+            const vec& obs_variance,
+            const vec& background_at_points,
+            const vec& bvariance_at_points,
             const StructureFunction& structure,
             int max_points,
             vec& analysis_sigmas);
