@@ -604,8 +604,8 @@ namespace std {
 %apply std::vector<std::vector<int> >& OUTPUT { std::vector<std::vector<int> >& x_coord };
 %apply std::vector<float>& OUTPUT { std::vector<float>& distances };
 %apply std::vector<float>& OUTPUT { std::vector<float>& standard_error };
-%apply std::vector<float>& OUTPUT { std::vector<float>& analysis_sigmas };
-%apply std::vector<std::vector<float> >& OUTPUT { std::vector<std::vector<float> >& analysis_sigmas };
+%apply std::vector<float>& OUTPUT { std::vector<float>& analysis_variance };
+%apply std::vector<std::vector<float> >& OUTPUT { std::vector<std::vector<float> >& analysis_variance };
 %apply std::vector<std::vector<float> >& OUTPUT { std::vector<std::vector<float> >& distances };
 %apply int& OUTPUT { int& X1_out };
 %apply int& OUTPUT { int& Y1_out };
