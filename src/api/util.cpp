@@ -297,6 +297,8 @@ int gridpp::get_upper_index(float iX, const std::vector<float>& iValues) {
     return index;
 }
 float gridpp::interpolate(float x, const std::vector<float>& iX, const std::vector<float>& iY) {
+    if(!gridpp::is_valid(x))
+        return gridpp::MV;
     if(iX.size() != iY.size())
         throw std::invalid_argument("Dimension mismatch. Cannot interpolate.");
     float y = gridpp::MV;

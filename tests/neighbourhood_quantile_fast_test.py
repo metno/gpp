@@ -31,6 +31,15 @@ class Test(unittest.TestCase):
             with self.assertRaises(ValueError) as e:
                 gridpp.neighbourhood_quantile_fast(field, quantile, halfwidth, thresholds)
 
+    def test_nan_quantile(self):
+        field = np.ones([5, 5])
+        halfwidth = 1
+        quantile = np.nan
+        thresholds = [0, 1]
+
+        output = gridpp.neighbourhood_quantile_fast(field, quantile, halfwidth, thresholds)
+        np.testing.assert_array_almost_equal(np.nan*np.ones(output.shape), output)
+
     def test_empty(self):
         for quantile in np.arange(0.1,0.9,0.1):
             for num_thresholds in [1, 2]:
