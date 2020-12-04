@@ -676,7 +676,11 @@ namespace gridpp {
     int get_upper_index(float iX, const std::vector<float>& iValues);
 
     /** Piecewise linear interpolation
-     *  If x is outside the range of iX, then the min/max value of iY is used
+     *  If x is outside the range of iX, then the min/max value of iY is used. If there are multiple
+     *  identical x values, then the average of the y values at each end of the x-interval that is
+     *  constant is used. The exception is if the constant interval is on one (only) of the edges of the
+     *  interpolation curve. In that case, the y-value at the end of the interval further away from
+     *  the boundary of the curve is used.
      *  @param x Interpolation to this point
      *  @param iX Vector of x-axis values. Vector must be sorted.
      *  @param iY Vector of y-axis values corresponding to iX.

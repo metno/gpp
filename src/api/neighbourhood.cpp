@@ -389,8 +389,14 @@ vec2 gridpp::neighbourhood_quantile_fast(const vec2& input, const vec2& quantile
                 else
                     is_missing = true;
             }
-            if(!is_missing)
-                output[y][x] = gridpp::interpolate(curr_quantile, yarray, thresholds);
+            if(!is_missing) {
+                if(curr_quantile == 1 && yarray[0] == 1)
+                    output[y][x] = thresholds[0];
+                else if(curr_quantile == 0 && yarray[yarray.size() - 1] == 0)
+                    output[y][x] = thresholds[thresholds.size() - 1];
+                else
+                    output[y][x] = gridpp::interpolate(curr_quantile, yarray, thresholds);
+            }
         }
     }
 
@@ -501,8 +507,14 @@ vec2 gridpp::neighbourhood_quantile_fast(const vec3& input, const vec2& quantile
                 else
                     is_missing = true;
             }
-            if(!is_missing)
-                output[y][x] = gridpp::interpolate(curr_quantile, yarray, thresholds);
+            if(!is_missing) {
+                if(curr_quantile == 1 && yarray[0] == 1)
+                    output[y][x] = thresholds[0];
+                else if(curr_quantile == 0 && yarray[yarray.size() - 1] == 0)
+                    output[y][x] = thresholds[thresholds.size() - 1];
+                else
+                    output[y][x] = gridpp::interpolate(curr_quantile, yarray, thresholds);
+            }
         }
     }
 

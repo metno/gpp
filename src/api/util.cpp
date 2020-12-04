@@ -305,9 +305,9 @@ float gridpp::interpolate(float x, const std::vector<float>& iX, const std::vect
     if(iX.size() == 0)
         return gridpp::MV;
 
-    if(x >= iX[iX.size()-1])
+    if(x > iX[iX.size()-1])
         return iY[iX.size()-1];
-    if(x <= iX[0])
+    if(x < iX[0])
         return iY[0];
 
     int i0   = get_lower_index(x, iX);
@@ -317,8 +317,16 @@ float gridpp::interpolate(float x, const std::vector<float>& iX, const std::vect
     float y0 = iY[i0];
     float y1 = iY[i1];
 
-    if(x0 == x1)
-        y = (y0+y1)/2;
+    if(x0 == x1) {
+        if(i0 == 0 && i1 == iX.size()-1)
+            y = (y0 + y1)/2;
+        else if(i0 == 0)
+            y = y1;
+        else if(i1 == iX.size()-1)
+            y = y0;
+        else
+            y = (y0+y1)/2;
+    }
     else {
         assert(x1 >= x0);
         y = y0 + (y1 - y0) * (x - x0)/(x1 - x0);

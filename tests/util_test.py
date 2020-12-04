@@ -93,6 +93,12 @@ class Test(unittest.TestCase):
         with self.assertRaises(Exception) as e:
             gridpp.not_implemented_error("test")
 
+    def test_get_index(self):
+        self.assertEqual(2, gridpp.get_lower_index(1, [0, 0, 1, 1]))
+        self.assertEqual(3, gridpp.get_upper_index(1, [0, 0, 1, 1]))
+        self.assertEqual(0, gridpp.get_lower_index(0, [0, 0, 1, 1]))
+        self.assertEqual(1, gridpp.get_upper_index(0, [0, 0, 1, 1]))
+
 
 if __name__ == '__main__':
     unittest.main()

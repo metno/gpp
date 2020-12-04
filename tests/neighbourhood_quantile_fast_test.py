@@ -126,6 +126,15 @@ class Test(unittest.TestCase):
         values = np.nan *np.zeros(values.shape)
         np.testing.assert_array_equal(values[:, :, 0], gridpp.neighbourhood_quantile_fast(values, quantiles, halfwidth, thresholds))
 
+    def test_all_same(self):
+        """ Check that min and max of an neighbourhood with all identical values is correct """
+        field = np.zeros([10, 10])
+        thresholds = [0, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100]
+        for quantile in [0, 0.001, 0.999, 1]:
+            with self.subTest(quantile=quantile):
+                output = gridpp.neighbourhood_quantile_fast(field, quantile, 5, thresholds)
+                np.testing.assert_array_almost_equal(output, field)
+
 
 if __name__ == '__main__':
     unittest.main()
