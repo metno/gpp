@@ -1,6 +1,6 @@
 Name: SMHI-gridpp-lib
-Version: 0.5
-Release: 1
+Version: 0.6
+Release: 0.dev1
 Summary: Driver library for SMHI's GridPP version
 License: SMHI
 Group: Applications/System
@@ -27,6 +27,11 @@ welcome, either by using the issue tracker in Github, or by contacting Thomas Ni
 
 This is an SMHI's adaptation of MetNO's library
 
+%build
+cd ${RPM_SOURCE_DIR}/build
+cmake ..
+make build-python
+
 %install
 
 mkdir -p $RPM_BUILD_ROOT%{INSTALLDIR}
@@ -51,7 +56,8 @@ rm -rf $RPM_SOURCE_DIR
 %attr(644,root,root) %{INSTALLDIR}/*.py
 
 %changelog
-
+* Mon Dec 7 2020 Aliaksandr Rahachou <aliaksandr.rahachou@hiq.se> - 0.6.0.dev1
+- GridPP 0.6.0.dev1
 * Tue Nov 24 2020 Aliaksandr Rahachou <aliaksandr.rahachou@hiq.se> - 0.5-1
 - GridPP 0.5.1
 * Thu Oct 15 2020 Aliaksandr Rahachou <aliaksandr.rahachou@hiq.se> - 0.1-1

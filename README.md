@@ -21,99 +21,68 @@ For information on how to use gridpp, check out the wiki at https://github.com/m
 - Efficient data structures for nearest location lookup in a vector or grid of locations
 - Command-line client with support for Netcdf files with flexibility in how variables and dimensions are configured
 
-## Example
-
-The following computes a moving neighbourhood mean with a half-width of 7 gridpoints (i.e. 15x15 neighbourhood)
-
-```python
-import gridpp
-import numpy as np
-
-field = np.random.rand(300, 200)
-halfwidth = 7
-gridpp.neighbourhood(field, halfwidth, gridpp.Mean)
-```
-
-![Example](extras/image.gif)
-
 ## Required dependencies
 - [Boost](https://www.boost.org/) >= 1.59
 - [Armadillo](http://arma.sourceforge.net/) >= 6.6
 - [GNU Scientific Library](https://www.gnu.org/software/gsl/)
 - [Netcdf](https://www.unidata.ucar.edu/software/netcdf/)
 
-On Ubuntu Bionic, these can be installed like this:
-```bash
-sudo apt-get update
-sudo apt-get install libboost-all-dev
-sudo apt-get install libgsl0-dev libblas-dev
-sudo apt-get install netcdf-bin libnetcdf-dev
-sudo apt-get install libarmadillo6 libarmadillo-dev
-```
+## Install as RPM-package into SMHI's server environment
 
-Note that Ubuntu Xenial only has Armadillo 6.5 in its apt repository. In that case you need to install  [Armadillo 6.6](http://arma.sourceforge.net/) or later manually.
+## Install dependencies
 
-## Installing the python bindings from pip
+    sudo yum install armadillo-devel boost-devel gsl-devel netcdf-devel swig \
+    python3 python3-scipy python3-numpy python3-six
 
-The easiest is to install the latest release of the package using pip. Provided you have installed the dependencies listed above, you can install the most recent release of the python package as follows:
-```bash
-pip3 install gridpp --user
-```
+### Create RPM
 
-To check that the installation worked, run the following in python3:
-```python
-import gridpp
-print(gridpp.version())
-```
+Run command: 
+    
+    ./build_rpm.sh
+    
+### Install as RPM-package locally
+    
+Copy to repo:
 
-## Full gridpp installation from source
+    cp ~/rpmbuild/RPMS/x86_64/SMHI-gridpp-lib-<version>.x86_64.rpm /data/prod/linda/rpm-repository-linda/clientrepos/<host_name>
 
-1. Either download the source code from the [latest release](https://github.com/metno/gridpp/releases), unzip
-   the file and navigate into the extracted folder; or clone the repo from github.
+Update repo, utv: 
 
-2. Install extra requirements
+    createrepo /data/prod/linda/rpm-repository-linda/clientrepos/<host_name>
+    
+Install RPM: 
 
-These are only required when installing from source
-```
-sudo apt install swig cmake
-```
+    sudo smhi-yum install SMHI-gridpp-lib
+    
+Update RPM: 
 
-3. Set up cmake installation
+    sudo smhi-yum update SMHI-gridpp-lib
+    
+### Install as RPM-package into SMHI's server environment
+    
+Copy to repo, utv:
 
-```bash
-mkdir build
-cd build
-cmake ..
-```
+    cp ~/rpmbuild/RPMS/x86_64/SMHI-gridpp-lib-<version>.x86_64.rpm /data/prod/elin/kickstart/htdocs/yum/serverrepos/<server_name>
 
-4. Install the C++ library
+Copy to repo, test, prod: 
+    
+    cp ~/rpmbuild/RPMS/x86_64/SMHI-gridpp-lib-<version>.x86_64.rpm /data/prod/elin/kickstart/htdocs/yum/serverrepos/<server_name>
+    
+Update repo, utv: 
 
-```bash
-sudo make install
-```
-This will install the library in `/usr/local/lib/libgridpp.so` and the gridpp command-line client in
-`/usr/local/bin/gridpp`. To specify a custom installation path, use the following in step 3:
+    createrepo /data/prod/elin/kickstart/htdocs/yum/serverrepos/<server_name>
+    
+Update repo, test, prod: 
 
-```bash
-cmake .. -DCMAKE_INSTALL_PREFIX=<custom path>
-```
+    createrepo /data/prod/elin/kickstart/htdocs/yum/serverrepos/<server_name>
+    
+Install RPM: 
 
-5. Install the python bindings
+    sudo smhi-yum --enablerepo=<server_name> install SMHI-gridpp-lib
+    
+Update RPM: 
 
-```bash
-make install-python-user
-```
-
-This installs the python bindings in
-`~/local/lib/python3.6/site-packages/gridpp.py`. To install the python bindings system-wide, use `sudo make install-python` instead.
-
-6. Install the R bindings
-
-```bash
-make build-r
-```
-
-Currently, the R package is not installed centrally, but instead is placed in `extras/SWIG/R/gridpp.R` in the build directory.
+    sudo smhi-yum --enablerepo=<server_name> update SMHI-gridpp-lib
 
 ## Copyright and license
 Copyright © 2014-2020 Norwegian Meteorological Institute. Gridpp is licensed under the GNU LEsser General
