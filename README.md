@@ -27,7 +27,7 @@ For information on how to use gridpp, check out the wiki at https://github.com/m
 - [GNU Scientific Library](https://www.gnu.org/software/gsl/)
 - [Netcdf](https://www.unidata.ucar.edu/software/netcdf/)
 
-## Install as RPM-package into SMHI's server environment
+## Install as RPM-package
 
 ## Install dependencies
 
@@ -78,10 +78,12 @@ Update repo, test, prod:
     
 Install RPM: 
 
+    sudo -i -u <gridpp_user_name>
     sudo smhi-yum --enablerepo=<server_name> install SMHI-gridpp-lib
     
 Update RPM: 
 
+    sudo -i -u <gridpp_user_name>
     sudo smhi-yum --enablerepo=<server_name> update SMHI-gridpp-lib
 
 ## Copyright and license

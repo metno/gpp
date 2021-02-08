@@ -28,8 +28,10 @@ welcome, either by using the issue tracker in Github, or by contacting Thomas Ni
 This is an SMHI's adaptation of MetNO's library
 
 %build
+mkdir ${RPM_SOURCE_DIR}/build
 cd ${RPM_SOURCE_DIR}/build
-cmake ..
+cmake -BUILD_R=OFF ..
+export CFLAGS="-I /usr/lib64/python3.6/site-packages/numpy/core/include $CFLAGS"
 make build-python
 
 %install
@@ -37,7 +39,6 @@ make build-python
 mkdir -p $RPM_BUILD_ROOT%{INSTALLDIR}
 
 cp ${RPM_SOURCE_DIR}/build/extras/SWIG/python/gridpp.py $RPM_BUILD_ROOT%{INSTALLDIR}
-cp ${RPM_SOURCE_DIR}/extras/python/__init__.py $RPM_BUILD_ROOT%{INSTALLDIR}
 cp ${RPM_SOURCE_DIR}/build/extras/SWIG/python/_gridpp.so $RPM_BUILD_ROOT%{INSTALLDIR}
 
 %postun
